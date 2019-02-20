@@ -1,60 +1,21 @@
-### Buildpack User Documentation
+### Web Config Transform Buildpack
 
-### Building the Buildpack
-To build this buildpack, run the following command from the buildpack's directory:
+A supply buildpack that will transform web.config based on the standard XSD transform templates. ASPNETCORE_ENVIRONMENT environmental variable is used to select the profile to be used. Ex. `ASPNETCORE_ENVIRONMENT=Debug`, results in `Web.Debug.config` being applied on top of `Web.Config`.
 
-1. Source the .envrc file in the buildpack directory.
-```bash
-source .envrc
-```
-To simplify the process in the future, install [direnv](https://direnv.net/) which will automatically source .envrc when you change directories.
+Any environment variable set with matching key configured in web.config `/configuration/appSettings` will have their values replaced.
 
-1. Install buildpack-packager
-```bash
-./scripts/install_tools.sh
-```
+If config server binding is detected, it will replace any matching token in web.config with config server value. Tokens are specified in format of `#{config:path}`
 
-1. Build the buildpack
-```bash
-buildpack-packager build
-```
+### Usage
 
-1. Use in Cloud Foundry
-Upload the buildpack to your Cloud Foundry and optionally specify it by name
+Include buildpack in applications `manifest.yaml`. Example:
 
-```bash
-cf create-buildpack [BUILDPACK_NAME] [BUILDPACK_ZIP_FILE_PATH] 1
-cf push my_app [-b BUILDPACK_NAME]
+```yaml
+applications:
+- name: simpleapp
+  stack: windows2016
+  buildpacks: 
+    - https://github.com/macsux/web-config-transform-buildpack/releases/download/1.0/web-config-transform-buildpack.zip
+    - hwc_buildpack
 ```
 
-### Testing
-Buildpacks use the [Cutlass](https://github.com/cloudfoundry/libbuildpack/cutlass) framework for running integration tests.
-
-To test this buildpack, run the following command from the buildpack's directory:
-
-1. Source the .envrc file in the buildpack directory.
-
-```bash
-source .envrc
-```
-To simplify the process in the future, install [direnv](https://direnv.net/) which will automatically source .envrc when you change directories.
-
-1. Run unit tests
-
-```bash
-./scripts/unit.sh
-```
-
-1. Run integration tests
-
-```bash
-./scripts/integration.sh
-```
-
-More information can be found on Github [cutlass](https://github.com/cloudfoundry/libbuildpack/cutlass).
-
-### Reporting Issues
-Open an issue on this project
-
-## Disclaimer
-This buildpack is experimental and not yet intended for production use.
