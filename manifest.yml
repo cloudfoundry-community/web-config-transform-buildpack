@@ -1,0 +1,18 @@
+default_versions: []
+dependencies: []
+dependency_deprecation_dates: []
+include_files:
+- README.md
+- VERSION
+- bin/detect
+- bin/detect.bat
+- bin/detect.ps1
+- bin/supply
+- bin/supply.bat
+- bin/supply.ps1
+- bin/run_ksetup.bat
+- bin/run_ksetup.ps1
+- manifest.yml
+language: iwa
+pre_package: scripts/build.sh
+stack: windows2016
