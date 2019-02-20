@@ -1,4 +1,4 @@
 $ErrorActionPreference = "Stop"
 
-echo "===Testing"
-dir c:\home\vcap\app
+echo "=== Testing"
+dir c:\users\vcap\app
