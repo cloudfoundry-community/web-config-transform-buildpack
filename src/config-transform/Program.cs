@@ -13,9 +13,9 @@ using Steeltoe.Extensions.Configuration.CloudFoundry;
 
 namespace config_transform
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(params string[] args)
         {
             if (args.Length == 0)
             {
@@ -24,54 +24,78 @@ namespace config_transform
             }
             var appPath = args[0];
             
+            var webConfig = Path.Combine(appPath, "web.config");
+            if (!File.Exists(webConfig))
+            {
+                Console.WriteLine("Web.config not detected");
+                Environment.Exit(0);
+            }
+
             var config = new ConfigurationBuilder().AddCloudFoundry().Build();
             var isConfigServerBound = config.AsEnumerable().Select(x => x.Key).Any(x => x == "vcap:services:p-config-server:0");
-            
-            var webConfig = Path.Combine(appPath, "web.config");
-            if(!File.Exists(webConfig))
-                Environment.Exit(0);
+            var configBuilder = new ConfigurationBuilder();
+            if (isConfigServerBound)
+            {
+                configBuilder.AddConfigServer();
+                Console.WriteLine("Config server binding found - using values for token replacement");
+            }
+
+            configBuilder.AddCloudFoundry();
+            configBuilder.AddEnvironmentVariables();
+            config = configBuilder.Build();
             
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Release";
             var xdt = Path.Combine(appPath, $"web.{environment}.config");
+            var doc = new XmlDocument();
+            doc.Load(webConfig);
             if (!string.IsNullOrEmpty(environment) && File.Exists(xdt))
             {
                 Console.WriteLine($"Applying {xdt} to web.config");
                 var transform = new Microsoft.Web.XmlTransform.XmlTransformation(xdt);
-                var doc = new XmlDocument();
-                
-                doc.Load(webConfig);
                 transform.Apply(doc);
+            }
 
-                var adds = doc.SelectNodes("/configuration/appSettings/add").OfType<XmlElement>();
+            Console.WriteLine("Replacing matching keys in appSettings with values in config provider");
+            var adds = doc.SelectNodes("/configuration/appSettings/add").OfType<XmlElement>();
 	
-                foreach(var add in adds)
-                {
-		
-                    var key = add.GetAttribute("name");
-                    if(key == null)
-                        continue;
-                    var envVal = Environment.GetEnvironmentVariable(key);
-                    if(envVal != null)
-                        add.SetAttribute("value", envVal);
-                }
-                
-                if (!File.Exists(webConfig + ".orig")) // backup original web.config as we're gonna transform into it's place
-                    File.Move(webConfig, webConfig + ".orig");
-                doc.Save(webConfig);
-            }
-
-            if (isConfigServerBound)
+            foreach(var add in adds)
             {
-                config = new ConfigurationBuilder().AddConfigServer().Build();
-                Console.WriteLine("Config server binding found - replacing matching variables in web.config");
-                        
-                var webConfigContent = File.ReadAllText(webConfig);
-                foreach (var configEntry in config.AsEnumerable())
-                {
-                    webConfigContent = webConfigContent.Replace("#{" + configEntry.Key + "}", configEntry.Value);
-                }
-                File.WriteAllText(webConfig, webConfigContent);
+	
+                var key = add.GetAttribute("name");
+                if(key == null)
+                    continue;
+                var envVal = Environment.GetEnvironmentVariable(key);
+                if(envVal != null)
+                    add.SetAttribute("value", envVal);
             }
+            
+            var connStr = doc.SelectNodes("/configuration/connectionStrings/add").OfType<XmlElement>();
+	
+            foreach(var add in connStr)
+            {
+	
+                var key = add.GetAttribute("name");
+                if(key == null)
+                    continue;
+                var envVal = Environment.GetEnvironmentVariable(key);
+                if(envVal != null)
+                    add.SetAttribute("connectionString", envVal);
+            }
+            
+            if (!File.Exists(webConfig + ".orig")) // backup original web.config as we're gonna transform into it's place
+                File.Move(webConfig, webConfig + ".orig");
+            doc.Save(webConfig);
+        
+
+            Console.WriteLine("Replacing matching variables in web.config");
+                        
+            var webConfigContent = File.ReadAllText(webConfig);
+            foreach (var configEntry in config.AsEnumerable())
+            {
+                webConfigContent = webConfigContent.Replace("#{" + configEntry.Key + "}", configEntry.Value);
+            }
+            File.WriteAllText(webConfig, webConfigContent);
+            
         }
     }
 }
