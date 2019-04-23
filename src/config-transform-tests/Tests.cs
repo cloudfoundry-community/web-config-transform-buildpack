@@ -29,7 +29,7 @@ namespace config_transform_tests
         {
             
             Environment.SetEnvironmentVariable("MyConnectionString","Replaced");
-            Environment.SetEnvironmentVariable("MyKey","Replaced");
+            Environment.SetEnvironmentVariable("MyKey","Replaced2");
             Environment.SetEnvironmentVariable("configuration__customkey__somevalue","Replaced");
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT","Debug");
             
@@ -38,10 +38,10 @@ namespace config_transform_tests
             var doc = new XmlDocument();
             doc.Load(_webConfigPath);
 
-            var node = (XmlElement) doc.SelectSingleNode("/configuration/appSettings/add[@name=\"MyKey\"]");
+            var node = (XmlElement) doc.SelectSingleNode("/configuration/appSettings/add[@key=\"MyKey\"]");
             node.Should().NotBeNull();
             var nodeValue = node.GetAttribute("value");
-            nodeValue.Should().Be("Replaced");
+            nodeValue.Should().Be("Replaced2");
             
             node = (XmlElement) doc.SelectSingleNode("/configuration/connectionStrings/add[@name=\"MyConnectionString\"]");
             node.Should().NotBeNull();
@@ -57,7 +57,7 @@ namespace config_transform_tests
 
         public void Dispose()
         {
-            Directory.Delete(_tempFixtureFolder);
+            Directory.Delete(_tempFixtureFolder, true);
         }
     }
 }

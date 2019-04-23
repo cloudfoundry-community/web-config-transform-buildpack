@@ -61,7 +61,7 @@ namespace config_transform
             foreach(var add in adds)
             {
 	
-                var key = add.GetAttribute("name");
+                var key = add.GetAttribute("key");
                 if(key == null)
                     continue;
                 var envVal = Environment.GetEnvironmentVariable(key);
