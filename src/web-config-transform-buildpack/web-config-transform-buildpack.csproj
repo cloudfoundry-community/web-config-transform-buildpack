@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp2.0;net47</TargetFrameworks>
+    <RootNamespace>WebConfigTransformBuildpack</RootNamespace>
+    <AssemblyName>Buildpack</AssemblyName>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.Xdt" Version="3.0.0" />
+    <PackageReference Include="Pivotal.Extensions.Configuration.ConfigServerBase" Version="2.1.1" />
+  </ItemGroup>
+</Project>
