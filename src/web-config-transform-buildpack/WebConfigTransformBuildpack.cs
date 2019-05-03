@@ -19,7 +19,9 @@ namespace WebConfigTransformBuildpack
         protected override void Apply(string buildPath, string cachePath, string depsPath, int index)
         {
             Console.WriteLine("=== WebConfig Transform Buildpack ===");
+
             var webConfig = Path.Combine(buildPath, "web.config");
+
             if (!File.Exists(webConfig))
             {
                 Console.WriteLine("Web.config not detected");
@@ -30,68 +32,35 @@ namespace WebConfigTransformBuildpack
 
             Console.WriteLine($"Using Environment: {environment}");
 
-            var config = new ConfigurationBuilder().AddCloudFoundry().Build();
-            var isConfigServerBound = config.AsEnumerable().Select(x => x.Key).Any(x => x == "vcap:services:p-config-server:0");
             var configBuilder = new ConfigurationBuilder();
+            configBuilder.AddEnvironmentVariables();
+            configBuilder.AddCloudFoundry();
 
-            if (isConfigServerBound)
+            if (IsConfigServerBound())
             {
-                var applicationName = Environment.GetEnvironmentVariable("spring:cloud:config:name")
-                                        ?? Environment.GetEnvironmentVariable("spring:application:name")
-                                        ?? Environment.GetEnvironmentVariable("vcap:application:application_name");
-
-                Console.WriteLine($"Application Name: {applicationName}, used by config server..");
-
-                configBuilder.AddConfigServer(applicationName, environment);
-
+                configBuilder.AddConfigServer(environment);
                 Console.WriteLine("Config server binding found...");
             }
 
-            configBuilder.AddCloudFoundry();
-            configBuilder.AddEnvironmentVariables();
-            config = configBuilder.Build();
+            var config = configBuilder.Build();
 
             var xdt = Path.Combine(buildPath, $"web.{environment}.config");
             var doc = new XmlDocument();
             doc.Load(webConfig);
 
-            if (!string.IsNullOrEmpty(environment) && File.Exists(xdt))
-            {
-                Console.WriteLine($"Applying {xdt} to web.config");
-                var transform = new Microsoft.Web.XmlTransform.XmlTransformation(xdt);
-                transform.Apply(doc);
-            }
-
-            Console.WriteLine("Replacing matching keys in appSettings with values in config provider");
-            var adds = doc.SelectNodes("/configuration/appSettings/add").OfType<XmlElement>();
-
-            foreach (var add in adds)
-            {
-                var key = add.GetAttribute("key");
-                if (key == null)
-                    continue;
-                var envVal = Environment.GetEnvironmentVariable(key);
-                if (envVal != null)
-                    add.SetAttribute("value", envVal);
-            }
-
-            var connStr = doc.SelectNodes("/configuration/connectionStrings/add").OfType<XmlElement>();
-
-            foreach (var add in connStr)
-            {
-
-                var key = add.GetAttribute("name");
-                if (key == null)
-                    continue;
-                var envVal = Environment.GetEnvironmentVariable(key);
-                if (envVal != null)
-                    add.SetAttribute("connectionString", envVal);
-            }
+            ApplyWebConfigTransform(environment, xdt, doc);
+            ApplyAppSettings(doc);
+            ApplyConnectionStrings(doc);
 
             if (!File.Exists(webConfig + ".orig")) // backup original web.config as we're gonna transform into it's place
                 File.Move(webConfig, webConfig + ".orig");
             doc.Save(webConfig);
 
+            PerformTokenReplacements(webConfig, config);
+        }
+
+        private static void PerformTokenReplacements(string webConfig, IConfigurationRoot config)
+        {
             Console.WriteLine("Replacing matching variable token in web.config");
 
             var webConfigContent = File.ReadAllText(webConfig);
@@ -105,6 +74,59 @@ namespace WebConfigTransformBuildpack
                 }
             }
             File.WriteAllText(webConfig, webConfigContent);
+        }
+
+        private static void ApplyConnectionStrings(XmlDocument doc)
+        {
+            Console.WriteLine("Replacing matching keys in connectionStrings with values in config provider");
+            var connStr = doc.SelectNodes("/configuration/connectionStrings/add").OfType<XmlElement>();
+
+            foreach (var add in connStr)
+            {
+
+                var key = add.GetAttribute("name");
+                if (key == null)
+                    continue;
+                var envVal = Environment.GetEnvironmentVariable(key);
+                if (envVal != null)
+                    add.SetAttribute("connectionString", envVal);
+            }
+        }
+
+        private static void ApplyAppSettings(XmlDocument doc)
+        {
+            Console.WriteLine("Replacing matching keys in appSettings with values in config provider");
+            var adds = doc.SelectNodes("/configuration/appSettings/add").OfType<XmlElement>();
+
+            foreach (var add in adds)
+            {
+                var key = add.GetAttribute("key");
+                if (key == null)
+                    continue;
+                var envVal = Environment.GetEnvironmentVariable(key);
+                if (envVal != null)
+                    add.SetAttribute("value", envVal);
+            }
+        }
+
+        private static void ApplyWebConfigTransform(string environment, string xdt, XmlDocument doc)
+        {
+            if (!string.IsNullOrEmpty(environment) && File.Exists(xdt))
+            {
+                Console.WriteLine($"Applying {xdt} to web.config");
+                var transform = new Microsoft.Web.XmlTransform.XmlTransformation(xdt);
+                transform.Apply(doc);
+            }
+        }
+
+        private static bool IsConfigServerBound()
+        {
+            return new ConfigurationBuilder()
+                                        .AddCloudFoundry()
+                                        .Build()
+                                        .AsEnumerable()
+                                        .Select(x => x.Key)
+                                        .Any(x => x == "vcap:services:p-config-server:0");
         }
     }
 }
