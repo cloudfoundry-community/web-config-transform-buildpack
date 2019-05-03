@@ -10,7 +10,7 @@ namespace WebConfigTransformBuildpack
 {
     public class WebConfigTransformBuildpack : SupplyBuildpack
     {
-        
+
         protected override bool Detect(string buildPath)
         {
             return File.Exists(Path.Combine(buildPath, "web.config"));
@@ -27,15 +27,24 @@ namespace WebConfigTransformBuildpack
             }
 
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Release";
+
             Console.WriteLine($"Using Environment: {environment}");
+
             var config = new ConfigurationBuilder().AddCloudFoundry().Build();
             var isConfigServerBound = config.AsEnumerable().Select(x => x.Key).Any(x => x == "vcap:services:p-config-server:0");
             var configBuilder = new ConfigurationBuilder();
 
             if (isConfigServerBound)
             {
-                configBuilder.AddConfigServer(environment);
-                Console.WriteLine("Config server binding found - using values for token replacement");
+                var applicationName = Environment.GetEnvironmentVariable("spring:cloud:config:name")
+                                        ?? Environment.GetEnvironmentVariable("spring:application:name")
+                                        ?? Environment.GetEnvironmentVariable("vcap:application:application_name");
+
+                Console.WriteLine($"Application Name: {applicationName}, used by config server..");
+
+                configBuilder.AddConfigServer(applicationName, environment);
+
+                Console.WriteLine("Config server binding found...");
             }
 
             configBuilder.AddCloudFoundry();
@@ -88,7 +97,7 @@ namespace WebConfigTransformBuildpack
             var webConfigContent = File.ReadAllText(webConfig);
             foreach (var configEntry in config.AsEnumerable())
             {
-                var replaceToken = "#{"+configEntry.Key+"}";
+                var replaceToken = "#{" + configEntry.Key + "}";
                 if (webConfigContent.Contains(replaceToken))
                 {
                     Console.WriteLine($"Replacing token `{replaceToken}` in web.config");
