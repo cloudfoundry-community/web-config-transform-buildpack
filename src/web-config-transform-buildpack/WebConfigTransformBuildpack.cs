@@ -13,34 +13,9 @@ namespace WebConfigTransformBuildpack
 {
     public class WebConfigTransformBuildpack : SupplyBuildpack
     {
-
         protected override bool Detect(string buildPath)
         {
             return File.Exists(Path.Combine(buildPath, "web.config"));
-        }
-
-        private static string GetSetting(string key, IConfiguration primary, IConfiguration secondary, string def)
-        {
-            var result = primary.GetValue<string>(key);
-            if (!string.IsNullOrEmpty(result))
-            {
-                return result;
-            }
-
-            result = secondary.GetValue<string>(key);
-            if (!string.IsNullOrEmpty(result))
-            {
-                return result;
-            }
-
-            return def;
-        }
-
-        private const string VCAP_SERVICES_CONFIGSERVER_PREFIX = "vcap:services:p-config-server:0";
-
-        private static string GetCloudFoundryUri(IConfiguration configServerSection, IConfiguration config, string def)
-        {
-            return GetSetting("credentials:uri", config.GetSection(VCAP_SERVICES_CONFIGSERVER_PREFIX), configServerSection, def);
         }
 
         protected override void Apply(string buildPath, string cachePath, string depsPath, int index)
