@@ -1,4 +1,4 @@
-namespace WebConfigTransformBuildpack
+namespace Pivotal.Web.Config.Transform.Buildpack
 {
     public abstract class SupplyBuildpack : BuildpackBase
     {
