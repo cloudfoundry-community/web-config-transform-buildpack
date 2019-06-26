@@ -1,4 +1,6 @@
-namespace WebConfigTransformBuildpack
+using System;
+
+namespace Pivotal.Web.Config.Transform.Buildpack
 {
     public class Program
     {

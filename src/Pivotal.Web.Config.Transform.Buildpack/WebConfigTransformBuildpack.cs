@@ -5,17 +5,19 @@ using System.Xml;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Steeltoe.Extensions.Configuration.CloudFoundry;
 using Steeltoe.Extensions.Configuration.ConfigServer;
 
-namespace WebConfigTransformBuildpack
+namespace Pivotal.Web.Config.Transform.Buildpack
 {
     public class WebConfigTransformBuildpack : SupplyBuildpack
     {
+        
         protected override bool Detect(string buildPath)
         {
-            return File.Exists(Path.Combine(buildPath, "web.config"));
+            return false;
         }
 
         protected override void Apply(string buildPath, string cachePath, string depsPath, int index)
@@ -72,9 +74,9 @@ namespace WebConfigTransformBuildpack
                 Console.WriteLine("-----> Config server binding found...");
 
                 configBuilder.AddConfigServer(environment,
-                    #pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
                     new LoggerFactory(new[] { new ConsoleLoggerProvider((name, level) => { level = LogLevel.Information; return true; }, false) }));
-                    #pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning restore CS0618 // Type or member is obsolete
             }
             else
                 configBuilder.AddCloudFoundry();
@@ -151,12 +153,23 @@ namespace WebConfigTransformBuildpack
 
         private static bool IsConfigServerBound()
         {
-            return new ConfigurationBuilder()
+            var configuration = new ConfigurationBuilder()
                                         .AddCloudFoundry()
-                                        .Build()
-                                        .AsEnumerable()
-                                        .Select(x => x.Key)
-                                        .Any(x => x == "vcap:services:p-config-server:0");
+                                        .Build();
+
+            var cfServicesOptions = new CloudFoundryServicesOptions(configuration);
+
+            foreach (var service in cfServicesOptions.ServicesList)
+            {
+                if (service.Label == "p-config-server" 
+                    || service.Label == "p.config-server" 
+                    || (service.Tags.Contains("spring-cloud") && service.Tags.Contains("configuration")))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

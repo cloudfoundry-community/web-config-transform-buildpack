@@ -1,44 +1,62 @@
 #!/usr/bin/env bash
-##########################################################################
-# This is the Cake bootstrapper script for Linux and OS X.
-# This file was downloaded from https://github.com/cake-build/resources
-# Feel free to change this file to fit your needs.
-##########################################################################
 
-# Define directories.
-SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-TOOLS_DIR=$SCRIPT_DIR/tools
-CAKE_VERSION=0.33.0
-CAKE_DLL=$TOOLS_DIR/Cake.CoreCLR.$CAKE_VERSION/Cake.dll
+echo $(bash --version 2>&1 | head -n 1)
 
-# Make sure the tools folder exist.
-if [ ! -d "$TOOLS_DIR" ]; then
-  mkdir "$TOOLS_DIR"
-fi
-
-
+set -eo pipefail
+SCRIPT_DIR=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 
 ###########################################################################
-# INSTALL CAKE
+# CONFIGURATION
 ###########################################################################
 
-if [ ! -f "$CAKE_DLL" ]; then
-    curl -Lsfo Cake.CoreCLR.zip "https://www.nuget.org/api/v2/package/Cake.CoreCLR/$CAKE_VERSION" && unzip -q Cake.CoreCLR.zip -d "$TOOLS_DIR/Cake.CoreCLR.$CAKE_VERSION" && rm -f Cake.CoreCLR.zip
-    if [ $? -ne 0 ]; then
-        echo "An error occured while installing Cake."
-        exit 1
+BUILD_PROJECT_FILE="$SCRIPT_DIR/build/_build.csproj"
+TEMP_DIRECTORY="$SCRIPT_DIR//.tmp"
+
+DOTNET_GLOBAL_FILE="$SCRIPT_DIR//global.json"
+DOTNET_INSTALL_URL="https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.sh"
+DOTNET_CHANNEL="Current"
+
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+
+###########################################################################
+# EXECUTION
+###########################################################################
+
+function FirstJsonValue {
+    perl -nle 'print $1 if m{"'$1'": "([^"\-]+)",?}' <<< ${@:2}
+}
+
+# If global.json exists, load expected version
+if [ -f "$DOTNET_GLOBAL_FILE" ]; then
+    DOTNET_VERSION=$(FirstJsonValue "version" $(cat "$DOTNET_GLOBAL_FILE"))
+    if [ "$DOTNET_VERSION" == ""  ]; then
+        unset DOTNET_VERSION
     fi
 fi
 
-# Make sure that Cake has been installed.
-if [ ! -f "$CAKE_DLL" ]; then
-    echo "Could not find Cake.exe at '$CAKE_DLL'."
-    exit 1
+# If dotnet is installed locally, and expected version is not set or installation matches the expected version
+if [[ -x "$(command -v dotnet)" && (-z ${DOTNET_VERSION+x} || $(dotnet --version) == "$DOTNET_VERSION") ]]; then
+    export DOTNET_EXE="$(command -v dotnet)"
+else
+    DOTNET_DIRECTORY="$TEMP_DIRECTORY/dotnet-unix"
+    export DOTNET_EXE="$DOTNET_DIRECTORY/dotnet"
+    
+    # Download install script
+    DOTNET_INSTALL_FILE="$TEMP_DIRECTORY/dotnet-install.sh"
+    mkdir -p "$TEMP_DIRECTORY"
+    curl -Lsfo "$DOTNET_INSTALL_FILE" "$DOTNET_INSTALL_URL"
+    chmod +x "$DOTNET_INSTALL_FILE"
+    
+    # Install by channel or version
+    if [ -z ${DOTNET_VERSION+x} ]; then
+        "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --channel "$DOTNET_CHANNEL" --no-path
+    else
+        "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --version "$DOTNET_VERSION" --no-path
+    fi
 fi
 
-###########################################################################
-# RUN BUILD SCRIPT
-###########################################################################
+echo "Microsoft (R) .NET Core SDK version $("$DOTNET_EXE" --version)"
 
-# Start Cake
-exec dotnet "$CAKE_DLL" "$@"
+"$DOTNET_EXE" build "$BUILD_PROJECT_FILE" /nodeReuse:false
+"$DOTNET_EXE" run --project "$BUILD_PROJECT_FILE" --no-build -- "$@"
