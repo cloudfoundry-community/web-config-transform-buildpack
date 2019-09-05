@@ -4,6 +4,8 @@
     <TargetFrameworks>netcoreapp2.2;net47</TargetFrameworks>
 
     <IsPackable>false</IsPackable>
+
+    <Configurations>Debug;Release;Test</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
