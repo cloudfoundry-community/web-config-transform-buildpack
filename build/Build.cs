@@ -94,9 +94,27 @@ class Build : NukeBuild
                 .SetAssemblyVersion(GitVersion.GetNormalizedAssemblyVersion())
                 .SetFileVersion(GitVersion.GetNormalizedFileVersion())
                 .SetInformationalVersion(GitVersion.InformationalVersion)
+                // .SetAssemblyVersion("1.0.0.0")
+                // .SetFileVersion("1.0.0.0")
+                // .SetInformationalVersion("1.0.0.0")
                 .EnableNoRestore());
         });
-    
+
+    Target Test => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
+        {
+            DotNetTest(s => s
+                .SetConfiguration(Configuration)
+                .SetNoBuild(IsLocalBuild)
+                .ResetVerbosity()
+                .SetFramework(Framework)
+                .SetRuntime(Runtime)
+                .CombineWith(
+                    Solution.GetProjects("*Tests"), (cs, v) => cs
+                        .SetProjectFile(v)));
+        });
+
     Target Publish => _ => _
         .Description("Packages buildpack in Cloud Foundry expected format into /artifacts directory")
         .DependsOn(Restore)
