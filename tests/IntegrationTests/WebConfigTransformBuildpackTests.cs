@@ -1,5 +1,6 @@
 using Pivotal.Web.Config.Transform.Buildpack;
 using System;
+using System.Threading;
 using System.IO;
 using System.Xml;
 using Xunit;
