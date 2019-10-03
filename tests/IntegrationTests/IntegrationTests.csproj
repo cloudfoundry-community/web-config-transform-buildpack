@@ -4,6 +4,10 @@
     <TargetFrameworks>netcoreapp2.2;net47</TargetFrameworks>
 
     <IsPackable>false</IsPackable>
+
+    <Platforms>AnyCPU;x64</Platforms>
+
+    <Configurations>Debug;Release;Test</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
