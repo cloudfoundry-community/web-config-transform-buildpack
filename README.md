@@ -233,7 +233,7 @@ appSettings:
 This buildpack can inject appSettings and connectionStrings values based on environment specific yaml config files even if replacement tokens are not present in Web.Release.Config file.  
 
 ### Sample Application & Walkthrough
-A sample web application and walkthrough can be found [here](https://github.com/greenhouse-org/webconfig-example-app)
+A sample web application and walkthrough can be found [here](https://github.com/cloudfoundry-community/webconfig-example-app)
 
 #### Note
 > For any issues you face with the web-config-transform-buildpack, please raise an issue at https://github.com/cloudfoundry-community/web-config-transform-buildpack/issues.
