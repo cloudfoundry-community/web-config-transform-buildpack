@@ -71,7 +71,7 @@ applications:
 - name: sampleapp
   stack: windows
   buildpacks:
-  - https://github.com/cloudfoundry-community/web-config-transform-buildpack/releases/download/XXX/web-config-transform-buildpack-XXX.zip
+  - https://github.com/cloudfoundry-community/web-config-transform-buildpack/releases/download/vXXX/Pivotal.Web.Config.Transform.Buildpack-win-x64-XXX.zip
   - hwc_buildpack
   env:
     "connectionStrings:MyDB": "Data Source=ReleaseSQLServer;Initial Catalog=MyReleaseDB;User ID=xxxx;Password=xxxx"
