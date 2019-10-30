@@ -179,7 +179,7 @@ applications:
 - name: sampleapp
   stack: windows
   buildpacks: 
-    - https://github.com/cloudfoundry-community/web-config-transform-buildpack/releases/download/v1.1.5/Web.Config.Transform.Buildpack-win-x64-1.1.5.zip
+    - https://github.com/cloudfoundry-community/web-config-transform-buildpack/releases/download/vXXX/Web.Config.Transform.Buildpack-win-x64-1.1.5.zip
     - hwc_buildpack
   env:
     ASPNETCORE_ENVIRONMENT: ((env))
