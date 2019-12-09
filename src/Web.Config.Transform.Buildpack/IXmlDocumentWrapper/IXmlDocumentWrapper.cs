@@ -1,6 +1,6 @@
 ﻿using System.Xml;
 
-namespace Pivotal.Web.Config.Transform.Buildpack
+namespace Web.Config.Transform.Buildpack
 {
     public interface IXmlDocumentWrapper
 

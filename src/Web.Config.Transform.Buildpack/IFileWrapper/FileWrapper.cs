@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Xml;
 
-namespace Pivotal.Web.Config.Transform.Buildpack
+namespace Web.Config.Transform.Buildpack
 {
     public class FileWrapper : IFileWrapper
     {

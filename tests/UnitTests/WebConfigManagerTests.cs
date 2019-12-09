@@ -2,7 +2,7 @@
 using FluentAssertions;
 using System;
 using Moq;
-using Pivotal.Web.Config.Transform.Buildpack;
+using Web.Config.Transform.Buildpack;
 using System.Xml;
 using System.Collections.Generic;
 
@@ -28,7 +28,7 @@ namespace UnitTests
             _fileWrapperMock.Setup(f => f.Exists(It.IsAny<string>())).Returns(false);
 
             Assert.Throws<ArgumentNullException>(() => 
-                new Pivotal.Web.Config.Transform.Buildpack.WebConfigManager(
+                new Web.Config.Transform.Buildpack.WebConfigManager(
                     _fileWrapperMock.Object,
                     _xmlDocumentWrapperMock.Object,
                     "file_that_doesnot_exist"));

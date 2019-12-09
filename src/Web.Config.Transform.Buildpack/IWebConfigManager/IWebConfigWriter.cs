@@ -1,4 +1,4 @@
-﻿namespace Pivotal.Web.Config.Transform.Buildpack
+﻿namespace Web.Config.Transform.Buildpack
 {
     public interface IWebConfigWriter
     {

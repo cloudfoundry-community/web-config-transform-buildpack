@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 
-namespace Pivotal.Web.Config.Transform.Buildpack
+namespace Web.Config.Transform.Buildpack
 {
     public interface IFileWrapper
     {

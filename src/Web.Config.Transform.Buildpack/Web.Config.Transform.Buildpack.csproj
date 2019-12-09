@@ -4,7 +4,7 @@
     <TargetFrameworks>netcoreapp2.2;net47</TargetFrameworks>
     <RuntimeIdentifiers>linux-x64;win-x64</RuntimeIdentifiers>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-    <RootNamespace>Pivotal.Web.Config.Transform.Buildpack</RootNamespace>
+    <RootNamespace>Web.Config.Transform.Buildpack</RootNamespace>
     <AssemblyName>buildpack</AssemblyName>
     <OutputType>Exe</OutputType>
     <Platforms>AnyCPU;x64</Platforms>

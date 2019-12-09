@@ -1,4 +1,4 @@
-using Pivotal.Web.Config.Transform.Buildpack;
+using Web.Config.Transform.Buildpack;
 using System;
 using System.Threading;
 using System.IO;

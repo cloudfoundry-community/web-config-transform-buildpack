@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Pivotal.Web.Config.Transform.Buildpack\Pivotal.Web.Config.Transform.Buildpack.csproj" />
+    <ProjectReference Include="..\..\src\Web.Config.Transform.Buildpack\Web.Config.Transform.Buildpack.csproj" />
   </ItemGroup>
 
   <ItemGroup>

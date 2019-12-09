@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 
-namespace Pivotal.Web.Config.Transform.Buildpack
+namespace Web.Config.Transform.Buildpack
 {
     public class Program
     {

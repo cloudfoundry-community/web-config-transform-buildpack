@@ -37,7 +37,7 @@ class Build : NukeBuild
         Linux
     }
     public static int Main () => Execute<Build>(x => x.Publish);
-    const string BuildpackProjectName = "Pivotal.Web.Config.Transform.Buildpack";
+    const string BuildpackProjectName = "Web.Config.Transform.Buildpack";
     string PackageZipName => $"{BuildpackProjectName}-{Runtime}-{GitVersion.MajorMinorPatch}.zip";
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]

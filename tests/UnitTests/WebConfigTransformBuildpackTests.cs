@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
 using Moq;
-using Pivotal.Web.Config.Transform.Buildpack;
+using Web.Config.Transform.Buildpack;
 using System;
 using System.Collections.Generic;
 using System.IO;
