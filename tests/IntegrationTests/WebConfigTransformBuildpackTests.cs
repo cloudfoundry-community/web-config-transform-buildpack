@@ -48,6 +48,26 @@ namespace IntegrationTests
         }
 
         [Fact]
+        public void WhenAppSettingsWithDottedKeysAreChangedSuccessfully()
+        {
+            // arrange
+            const string expectedValue = "AppSettings_Value1_For_Dotted_Key123";
+            Environment.SetEnvironmentVariable("appSettings:BP.AppSettings.Key1", expectedValue);
+
+
+            // act
+            _bp.Run(new[] { "supply", "", "", "", "0" });
+
+            // assert
+            var xml = new XmlDocument();
+            xml.Load("web.config");
+
+            var actualValue = xml.SelectSingleNode("/configuration/appSettings/add[@key='BP.AppSettings.Key1']/@value").Value;
+
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Fact]
         public void WhenConnectionStringsAreChangedSuccessfully()
         {
             // arrange

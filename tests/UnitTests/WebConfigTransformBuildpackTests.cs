@@ -12,23 +12,29 @@ namespace UnitTests
     public class WebConfigTransformBuildpackTests
     {
         private Mock<IEnvironmentWrapper> _environmentWrapperMock;
+        private Mock<ITracer> _environmentTracerMock;
         private Mock<IConfigurationFactory> _configurationFactoryMock;
         private Mock<IFileWrapper> _fileWrapperMock;
         private Mock<IXmlDocumentWrapper> _xmlDocumentWrapperMock;
+        private Mock<ILogger> _consoleLoggerMock;
         private WebConfigTransformBuildpack _buildpack;
 
         public WebConfigTransformBuildpackTests()
         {
             _environmentWrapperMock = new Mock<IEnvironmentWrapper>();
+            _environmentTracerMock = new Mock<ITracer>();
             _configurationFactoryMock = new Mock<IConfigurationFactory>();
             _fileWrapperMock = new Mock<IFileWrapper>();
             _xmlDocumentWrapperMock = new Mock<IXmlDocumentWrapper>();
+            _consoleLoggerMock = new Mock<ILogger>();
 
             _buildpack = new WebConfigTransformBuildpack(
                _environmentWrapperMock.Object,
+               _environmentTracerMock.Object,
                _configurationFactoryMock.Object,
                _fileWrapperMock.Object,
-               _xmlDocumentWrapperMock.Object
+               _xmlDocumentWrapperMock.Object,
+               _consoleLoggerMock.Object
                );
         }
 

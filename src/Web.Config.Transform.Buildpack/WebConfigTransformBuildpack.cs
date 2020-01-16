@@ -1,32 +1,30 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
-using Steeltoe.Extensions.Configuration.CloudFoundry;
-using Steeltoe.Extensions.Configuration.ConfigServer;
-using System;
-using System.IO;
-using System.Linq;
-using System.Xml;
+﻿using System.IO;
 
 namespace Web.Config.Transform.Buildpack
 {
     public class WebConfigTransformBuildpack : SupplyBuildpack
     {
         IEnvironmentWrapper _environmentWrapper;
+        ITracer _tracer;
         IConfigurationFactory _configurationFactory;
         IFileWrapper _fileWrapper;
         IXmlDocumentWrapper _xmlDocumentWrapper;
+        ILogger _logger;
 
         public WebConfigTransformBuildpack(
-            IEnvironmentWrapper environmentWrapper, 
+            IEnvironmentWrapper environmentWrapper,
+            ITracer tracer,
             IConfigurationFactory configurationFactory,
             IFileWrapper fileWrapper,
-            IXmlDocumentWrapper xmlDocumentWrapper)
+            IXmlDocumentWrapper xmlDocumentWrapper,
+            ILogger logger)
         {
             _environmentWrapper = environmentWrapper;
+            _tracer = tracer;
             _configurationFactory = configurationFactory;
             _fileWrapper = fileWrapper;
             _xmlDocumentWrapper = xmlDocumentWrapper;
+            _logger = logger;
         }
 
         protected override bool Detect(string buildPath)
@@ -36,24 +34,26 @@ namespace Web.Config.Transform.Buildpack
 
         protected override void Apply(string buildPath, string cachePath, string depsPath, int index)
         {
-            Console.WriteLine("================================================================================");
-            Console.WriteLine("=============== WebConfig Transform Buildpack execution started ================");
-            Console.WriteLine("================================================================================");
+            _logger.WriteLog("================================================================================");
+            _logger.WriteLog("=============== WebConfig Transform Buildpack execution started ================");
+            _logger.WriteLog("================================================================================");
 
             ApplyTransformations(Path.Combine(buildPath, "web.config"));
 
-            Console.WriteLine("================================================================================");
-            Console.WriteLine("============== WebConfig Transform Buildpack execution completed ===============");
-            Console.WriteLine("================================================================================");
+            _logger.WriteLog("================================================================================");
+            _logger.WriteLog("============== WebConfig Transform Buildpack execution completed ===============");
+            _logger.WriteLog("================================================================================");
         }
 
         private void ApplyTransformations(string webConfig)
         {
-            using (var webConfigManager = new WebConfigManager(_fileWrapper, _xmlDocumentWrapper, webConfig))
+            using (var webConfigManager = new WebConfigManager(_fileWrapper, _xmlDocumentWrapper, _logger, webConfig))
             {
-                var environment = _environmentWrapper.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Release";
-                Console.WriteLine($"-----> Using Environment: {environment}");
+                var environment = _environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release";
+                _logger.WriteLog($"-----> Using Environment: {environment}");
                 var config = _configurationFactory.GetConfiguration(environment);
+
+                _tracer.FlushEnvironmentVariables();
 
                 var transform = new WebConfigTransformHandler(config, webConfigManager);
 

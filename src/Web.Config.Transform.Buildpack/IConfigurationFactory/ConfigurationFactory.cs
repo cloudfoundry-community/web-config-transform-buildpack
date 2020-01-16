@@ -4,15 +4,16 @@ using Microsoft.Extensions.Logging.Console;
 using Steeltoe.Extensions.Configuration.CloudFoundry;
 using Steeltoe.Extensions.Configuration.ConfigServer;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Web.Config.Transform.Buildpack
 {
     public class ConfigurationFactory : IConfigurationFactory
     {
-        public ConfigurationFactory() { }
+        ILogger _logger;
+        public ConfigurationFactory(ILogger logger) {
+            _logger = logger;
+        }
 
         public IConfigurationRoot GetConfiguration(string environment)
         {
@@ -22,7 +23,7 @@ namespace Web.Config.Transform.Buildpack
 
             if (IsConfigServerBound())
             {
-                Console.WriteLine("-----> Config server binding found...");
+                _logger.WriteLog("-----> Config server binding found...");
 
                 configBuilder.AddConfigServer(environment,
 #pragma warning disable CS0618 // Type or member is obsolete

@@ -10,6 +10,7 @@ namespace Web.Config.Transform.Buildpack
     {
         private readonly IFileWrapper _fileWrapper;
         private readonly IXmlDocumentWrapper _xmlDocumentWrapper;
+        private readonly ILogger _logger;
 
         private const string APPSETTINGS_SELECTOR = "/configuration/appSettings/add";
         private const string CONNECTIONSTRINGS_SELECTOR = "/configuration/connectionStrings/add";
@@ -21,11 +22,13 @@ namespace Web.Config.Transform.Buildpack
         public WebConfigManager(
             IFileWrapper fileWrapper, 
             IXmlDocumentWrapper xmlDocumentWrapper, 
+            ILogger logger,
             string configFile = "web.config")
         {
             _fileWrapper = fileWrapper ?? throw new ArgumentNullException(nameof(fileWrapper), "File wrapper is required");
             _xmlDocumentWrapper = xmlDocumentWrapper ?? throw new ArgumentNullException(nameof(xmlDocumentWrapper), "Xml document wrapper is required");
-            
+            _logger = logger;
+
             if (!_fileWrapper.Exists(configFile))
                 throw new ArgumentNullException(nameof(configFile), "Web config file does not exist. Exiting the program.");
 
@@ -51,7 +54,7 @@ namespace Web.Config.Transform.Buildpack
 
             if (setting != null)
             {
-                Console.WriteLine($"-----> Replacing value for matching appSetting key `{key}` in web.config");
+                _logger.WriteLog($"-----> Replacing value for matching appSetting key `{key}` in web.config");
                 setting.Attributes["value"].Value = value;
             }
         }
@@ -114,7 +117,7 @@ namespace Web.Config.Transform.Buildpack
 
             if (setting != null)
             {
-                Console.WriteLine($"-----> Replacing connectionString for matching connectionString name `{name}` in web.config");
+                _logger.WriteLog($"-----> Replacing connectionString for matching connectionString name `{name}` in web.config");
                 setting.Attributes["connectionString"].Value = connectionString;
             }
         }
@@ -135,7 +138,7 @@ namespace Web.Config.Transform.Buildpack
 
             if (ValueExistsInXmlDoc(replaceToken))
             {
-                Console.WriteLine($"-----> Replacing token `{replaceToken}` in web.config");
+                _logger.WriteLog($"-----> Replacing token `{replaceToken}` in web.config");
                 _configXmlString = _configXmlString.Replace(replaceToken, value);
             }
         }
