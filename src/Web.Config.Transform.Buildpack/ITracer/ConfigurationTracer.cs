@@ -22,7 +22,7 @@ namespace Web.Config.Transform.Buildpack
                 && (environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release").ToLower().Contains("dev"))
             {
                 _logger.WriteLog($"-----> TRACE: Flushing out configurations...");
-                foreach (var config in _configuration.GetChildren())
+                foreach (var config in _configuration.AsEnumerable())
                 {
                     _logger.WriteLog($"-----> TRACE: KEY=> {config.Key}, VALUE=> {config.Value}");
                 }
