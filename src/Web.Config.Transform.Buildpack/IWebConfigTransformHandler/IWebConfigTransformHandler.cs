@@ -2,6 +2,8 @@
 {
     public interface IWebConfigTransformHandler
     {
+        void ApplyXmlTransformation(string buildPath, IEnvironmentWrapper environmentWrapper, IWebConfigWriter webConfigWriter);
+
         void CopyExternalAppSettings(IWebConfigWriter webConfigWriter);
 
         void CopyExternalConnectionStrings(IWebConfigWriter webConfigWriter);

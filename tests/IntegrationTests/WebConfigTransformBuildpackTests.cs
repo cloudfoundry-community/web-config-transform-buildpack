@@ -28,6 +28,23 @@ namespace IntegrationTests
         }
 
         [Fact]
+        public void XmlTransformationAppliedIfTransformationFileExists()
+        {
+            Environment.SetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM, "Release");
+            string expectedValue = "InsertedFromRelease";
+            // act
+            _bp.Run(new[] { "supply", "", "", "", "0" });
+
+            // assert
+            var xml = new XmlDocument();
+            xml.Load("web.config");
+
+            var actualValue = xml.SelectSingleNode("/configuration/qux/quz[@key='Inserted']/@value").Value;
+
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Fact]
         public void WhenAppSettingsAreChangedSuccessfully()
         {
             // arrange

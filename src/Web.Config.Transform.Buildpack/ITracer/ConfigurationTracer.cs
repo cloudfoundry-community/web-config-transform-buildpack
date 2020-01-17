@@ -18,8 +18,7 @@ namespace Web.Config.Transform.Buildpack
 
         public void FlushEnvironmentVariables()
         {
-            if (Convert.ToBoolean(environmentWrapper.GetEnvironmentVariable(Constants.TRACE_CONFIG_ENABLED_NM) ?? "false") 
-                && (environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release").ToLower().Contains("dev"))
+            if (IsTraceConfigEnabled())
             {
                 _logger.WriteLog($"-----> TRACE: Flushing out configurations...");
                 foreach (var config in _configuration.AsEnumerable())
@@ -27,6 +26,12 @@ namespace Web.Config.Transform.Buildpack
                     _logger.WriteLog($"-----> TRACE: KEY=> {config.Key}, VALUE=> {config.Value}");
                 }
             }
+        }
+
+        public bool IsTraceConfigEnabled()
+        {
+            return Convert.ToBoolean(environmentWrapper.GetEnvironmentVariable(Constants.TRACE_CONFIG_ENABLED_NM) ?? "false")
+                && (environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release").ToLower().Contains("dev");
         }
     }
 }

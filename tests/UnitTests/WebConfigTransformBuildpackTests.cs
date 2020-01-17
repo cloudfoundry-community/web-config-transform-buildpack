@@ -52,17 +52,8 @@ namespace UnitTests
         }
 
         [Fact]
-        public void When_ASPNETCORE_ENVIRONMENT_VariableExists_ApplyWebConfigTransform_ShouldNotFind_WebEnvironmetConfig()
+        public void When_TransformationFileNotExists_VariableExists_ApplyWebConfigTransform_ShouldNotFind_WebEnvironmetConfig()
         {
-            // as per design, we count on ASPNETCORE_ENVIRONMENT variable, 
-            // to get environment specific data from config server. 
-            // And we don't maintain a configuration file per environment. 
-            // so I believe tranform step in buildpack is not required.
-            // moreover config file gets transformed during build process.
-            
-            // this may be helpful when user pushes code directly without building source code
-            // and uses only environment variables as config source.
-
             _environmentWrapperMock
                 .Setup(e => e.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
                 .Returns("Development");
@@ -73,6 +64,21 @@ namespace UnitTests
             var fileExists = File.Exists(xdt);
 
             fileExists.Should().BeFalse();
+        }
+
+        [Fact]
+        public void When_TransformationFileExists_ApplyWebConfigTransform_ShouldFind_WebEnvironmetConfig()
+        {
+            _environmentWrapperMock
+                .Setup(e => e.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"))
+                .Returns("Release");
+
+            var environment = _environmentWrapperMock.Object.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Release";
+
+            var xdt = Path.Combine("", $"web.{environment}.config");
+            var fileExists = File.Exists(xdt);
+
+            fileExists.Should().BeTrue();
         }
     }
 }

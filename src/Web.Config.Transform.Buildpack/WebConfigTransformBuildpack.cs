@@ -38,14 +38,14 @@ namespace Web.Config.Transform.Buildpack
             _logger.WriteLog("=============== WebConfig Transform Buildpack execution started ================");
             _logger.WriteLog("================================================================================");
 
-            ApplyTransformations(Path.Combine(buildPath, "web.config"));
+            ApplyTransformations(buildPath, Path.Combine(buildPath, "web.config"));
 
             _logger.WriteLog("================================================================================");
             _logger.WriteLog("============== WebConfig Transform Buildpack execution completed ===============");
             _logger.WriteLog("================================================================================");
         }
 
-        private void ApplyTransformations(string webConfig)
+        private void ApplyTransformations(string buildPath, string webConfig)
         {
             using (var webConfigManager = new WebConfigManager(_fileWrapper, _xmlDocumentWrapper, _logger, webConfig))
             {
@@ -58,6 +58,7 @@ namespace Web.Config.Transform.Buildpack
 
                 var transform = new WebConfigTransformHandler(config, webConfigManager);
 
+                transform.ApplyXmlTransformation(buildPath, _environmentWrapper, webConfigManager);
                 transform.CopyExternalAppSettings(webConfigManager);
                 transform.CopyExternalConnectionStrings(webConfigManager);
                 transform.CopyExternalTokens(webConfigManager);

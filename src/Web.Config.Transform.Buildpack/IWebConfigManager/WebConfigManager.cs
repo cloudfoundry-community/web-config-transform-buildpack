@@ -47,6 +47,13 @@ namespace Web.Config.Transform.Buildpack
             _fileWrapper.Copy(_configFile, $"{_configFile}.orig");
         }
 
+        public void ExecuteXmlTransformation(string transformFilePath)
+        {
+            _logger.WriteLog($"-----> Applying {transformFilePath} transform to web.config");
+            var transform = new Microsoft.Web.XmlTransform.XmlTransformation(transformFilePath);
+            transform.Apply(_configXmlDoc);
+        }
+
         public void SetAppSetting(string key, string value)
         {
             if (_configXmlDoc == null) throw new ArgumentNullException(nameof(_configXmlDoc), "Config file is not loaded as xml document");
