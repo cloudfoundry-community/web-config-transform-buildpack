@@ -141,11 +141,23 @@ namespace Web.Config.Transform.Buildpack
                 _logger.WriteLog($"-----> Replacing token `{replaceToken}` in web.config");
                 _configXmlString = _configXmlString.Replace(replaceToken, value);
             }
+            else
+            {
+                if(IsTraceEnabled())
+                {
+                    _logger.WriteLog($"-----> TRACE: Token `{replaceToken}` not found in web.config");
+                }
+            }
         }
 
         public bool ValueExistsInXmlDoc(string value)
         {
             return _configXmlString.Contains(value);
+        }
+
+        public bool IsTraceEnabled()
+        {
+            return Convert.ToBoolean(Environment.GetEnvironmentVariable(Constants.TRACE_ENABLED_NM) ?? "false");
         }
     }
 }

@@ -1,23 +1,30 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections;
-using System.Linq;
 
 namespace Web.Config.Transform.Buildpack
 {
     public class ConfigurationTracer : ITracer
     {
+        private readonly IConfigurationRoot _configuration;
+        private readonly IEnvironmentWrapper environmentWrapper;
+        private readonly ILogger _logger;
+
+        public ConfigurationTracer(IEnvironmentWrapper environmentWrapper, IConfigurationFactory configurationFactory, ILogger logger)
+        {
+            _configuration = configurationFactory.GetConfiguration(environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release");
+            this.environmentWrapper = environmentWrapper;
+            _logger = logger;
+        }
+
         public void FlushEnvironmentVariables()
         {
-            var configuration = Program.GetService<IConfiguration>();
-
-            if (Convert.ToBoolean(Environment.GetEnvironmentVariable(Constants.ASPNETCORE_TRACE_ENABLED_NM) ?? "false") 
-                && !(Environment.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release").ToLower().Contains("prod"))
+            if (Convert.ToBoolean(environmentWrapper.GetEnvironmentVariable(Constants.TRACE_CONFIG_ENABLED_NM) ?? "false") 
+                && (environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release").ToLower().Contains("dev"))
             {
-                Console.WriteLine($"Flushing out configurations (Non-Prod only)...");
-                foreach (var config in configuration.GetChildren().Cast<DictionaryEntry>())
+                _logger.WriteLog($"-----> TRACE: Flushing out configurations...");
+                foreach (var config in _configuration.GetChildren())
                 {
-                    Console.WriteLine($"{config.Key}: {config.Value}");
+                    _logger.WriteLog($"-----> TRACE: KEY=> {config.Key}, VALUE=> {config.Value}");
                 }
             }
         }

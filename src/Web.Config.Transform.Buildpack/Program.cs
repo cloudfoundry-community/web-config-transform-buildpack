@@ -5,19 +5,9 @@ namespace Web.Config.Transform.Buildpack
 {
     public class Program
     {
-        static ServiceProvider container;
-
         static int Main(string[] args)
         {
             return GetBuildpackInstance().Run(args);
-        }
-
-        public static T GetService<T>()
-        {
-            if (container == null)
-                container = RegisterServices();
-
-            return container.GetService<T>();
         }
 
         public static ServiceProvider RegisterServices()
@@ -27,13 +17,13 @@ namespace Web.Config.Transform.Buildpack
                 .AddLogging()
                 .AddSingleton<ILogger, ConsoleLogger>()
                 .AddSingleton<IEnvironmentWrapper, EnvironmentWrapper>()
-                .AddSingleton<ITracer, ConfigurationTracer>()
                 .AddSingleton<IConfigurationFactory, ConfigurationFactory>()
+                .AddSingleton<ITracer, ConfigurationTracer>()
                 .AddSingleton<IFileWrapper, FileWrapper>()
                 .AddSingleton<IXmlDocumentWrapper, XmlDocumentWrapper>()
                 .AddSingleton<WebConfigTransformBuildpack>()
                 .BuildServiceProvider();
-            return container = serviceProvider;
+            return serviceProvider;
         }
 
         public static WebConfigTransformBuildpack GetBuildpackInstance()

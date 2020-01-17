@@ -51,6 +51,7 @@ namespace Web.Config.Transform.Buildpack
             {
                 var environment = _environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release";
                 _logger.WriteLog($"-----> Using Environment: {environment}");
+
                 var config = _configurationFactory.GetConfiguration(environment);
 
                 _tracer.FlushEnvironmentVariables();
