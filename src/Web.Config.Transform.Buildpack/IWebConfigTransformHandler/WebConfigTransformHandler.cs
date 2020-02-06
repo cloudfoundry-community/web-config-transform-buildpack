@@ -22,9 +22,9 @@ namespace Web.Config.Transform.Buildpack
             if (webConfigWriter == null)
                 throw new ArgumentNullException(nameof(webConfigWriter), "WebConfig writer is required");
 
-            var environment = environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release";
+            var transformationKey = environmentWrapper.GetEnvironmentVariable(Constants.XML_TRANSFORM_KEY_NM) ?? "Release";
 
-            var transformFilePath = Path.Combine(buildPath, $"web.{environment}.config");
+            var transformFilePath = Path.Combine(buildPath, $"web.{transformationKey}.config");
 
             if (File.Exists(transformFilePath))
             {
