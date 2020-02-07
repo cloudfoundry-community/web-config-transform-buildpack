@@ -17,15 +17,26 @@ In legacy ASP.Net applications, configuration settings are injected through Web.
 1. Bind config service to app using manifest
 1. Push app by parameterized environment name
 
-#### 1. Identify environment dependent configurations and externalize
+#### 1. How the buildpack works
 
-* Identify configuration items (in `Web.config` files) that are environment dependent that need to be externalized.
-* Modify your transform file (ex: `Web.Release.config`) to  use tokenized configuration items in the following format #{configPath:key}. For e.g. please refer before and after as below
-    > Note: all transform xml attributes and tokens are case-sensitive
+* Pulls all the configurations from environment variables and config server repo (if bounded).
+* Config server environment is identified by the environment variable `ASPNETCORE_ENVIRONMENT`, e.g. `dev`, `prod`, etc.
+* Apply xml transformation
+	> The transformation file is pulled from environment variable `XML_TRANSFORM_KEY`. For e.g. if the value of environment variable `XML_TRANSFORM_KEY` is `PCF`, then the transformation file, the buildpack looks for is `Web.PCF.config`. If the `XML_TRANSFORM_KEY` is not set, it looks for `Web.Release.config` by default. If the file doesn't exist, it skips transformation step and moves further.
+* Modify the transformed file with `appSettings:key` for `<AppSettings>` section and `connectionStrings:name` for `<ConnectionStrings>` section 
+* Modify the transformed file with tokens provided in the format `#{anykey}`, e.g. A token named `#{foo:bar}` will replaced with `myfoovalue` if an environment variable with key `foo:bar` is set with value `myfoovalue` or the config server repo `yaml` contains the info as below.
 
-##### Before tokenizing
+```yml
+foo:
+  bar: myfoovalue
+```
 
-Web.Config
+    > NOTE: all transform xml attributes and tokens are case-sensitive
+
+##### Execution steps in detail
+
+* Web.Config (Before transformation)
+
 ```xml
 <connectionStrings>
     <add name="MyDB" 
@@ -33,27 +44,41 @@ Web.Config
 </connectionStrings>
 ```
 
-Web.Release.config
-```xml
-<connectionStrings>
-    <add name="MyDB" 
-         connectionString="Data Source=ReleaseSQLServer;Initial Catalog=MyReleaseDB;User ID=xxxx;Password=xxxx" 
-         xdt:Transform="SetAttributes" 
-         xdt:Locator="Match(name)"/>
-</connectionStrings>
-```
+* Web.PCF.config (Transformation file)
 
-##### After tokenizing
-
-Web.Config (no change)
-
-Web.Release.config
 ```xml
 <connectionStrings>
     <add name="MyDB" 
          connectionString="#{connectionStrings:MyDB}" 
          xdt:Transform="SetAttributes" 
          xdt:Locator="Match(name)"/>
+</connectionStrings>
+```
+
+* If `XML_TRANSFORM_KEY` is set to `PCF`
+
+* Web.Config (after transformation)
+
+```xml
+<connectionStrings>
+    <add name="MyDB" 
+         connectionString="#{connectionStrings:MyDB}"/>
+</connectionStrings>
+``` 
+
+* If `ASPNETCORE_ENVIRONMENT` is set to `dev` and the config server repo `yaml` is as below...
+
+```yml
+connectionStrings:
+  MyDB: "Data Source=11.11.11.11;Initial Catalog=mydb;User ID=xxxx;Password=xxxx"
+```
+
+* Web.Config (after token replacement)
+
+```xml
+<connectionStrings>
+    <add name="MyDB" 
+         connectionString="Data Source=11.11.11.11;Initial Catalog=mydb;User ID=xxxx;Password=xxxx"/>
 </connectionStrings>
 ``` 
 

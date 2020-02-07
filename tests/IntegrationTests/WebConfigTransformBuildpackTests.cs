@@ -28,6 +28,57 @@ namespace IntegrationTests
         }
 
         [Fact]
+        public void XmlTransformationApplied_FromTransformationKey_And_IfTransformationFileExists()
+        {
+            Environment.SetEnvironmentVariable(Constants.XML_TRANSFORM_KEY_NM, "Cloud");
+            string expectedValue = "InsertedFromCloud";
+            // act
+            _bp.Run(new[] { "supply", "", "", "", "0" });
+
+            // assert
+            var xml = new XmlDocument();
+            xml.Load("web.config");
+
+            var actualValue = xml.SelectSingleNode("/configuration/qux/quz[@key='Inserted']/@value").Value;
+
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Fact]
+        public void XmlTransformation_IsCaseInsensitive()
+        {
+            Environment.SetEnvironmentVariable(Constants.XML_TRANSFORM_KEY_NM, "cloud");
+            string expectedValue = "InsertedFromCloud";
+            // act
+            _bp.Run(new[] { "supply", "", "", "", "0" });
+
+            // assert
+            var xml = new XmlDocument();
+            xml.Load("web.config");
+
+            var actualValue = xml.SelectSingleNode("/configuration/qux/quz[@key='Inserted']/@value").Value;
+
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Fact]
+        public void XmlTransformationApplied_FromRelease_IfTransformationFileExists_AndIf_TransformationKeyIsNotSet()
+        {
+            Environment.SetEnvironmentVariable(Constants.XML_TRANSFORM_KEY_NM, "Release");
+            string expectedValue = "InsertedFromRelease";
+            // act
+            _bp.Run(new[] { "supply", "", "", "", "0" });
+
+            // assert
+            var xml = new XmlDocument();
+            xml.Load("web.config");
+
+            var actualValue = xml.SelectSingleNode("/configuration/qux/quz[@key='Inserted']/@value").Value;
+
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Fact]
         public void WhenAppSettingsAreChangedSuccessfully()
         {
             // arrange
@@ -43,6 +94,26 @@ namespace IntegrationTests
             xml.Load("web.config");
 
             var actualValue = xml.SelectSingleNode("/configuration/appSettings/add[@key='BP_AppSettings_Key1']/@value").Value;
+
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Fact]
+        public void WhenAppSettingsWithDottedKeysAreChangedSuccessfully()
+        {
+            // arrange
+            const string expectedValue = "AppSettings_Value1_For_Dotted_Key123";
+            Environment.SetEnvironmentVariable("appSettings:BP.AppSettings.Key1", expectedValue);
+
+
+            // act
+            _bp.Run(new[] { "supply", "", "", "", "0" });
+
+            // assert
+            var xml = new XmlDocument();
+            xml.Load("web.config");
+
+            var actualValue = xml.SelectSingleNode("/configuration/appSettings/add[@key='BP.AppSettings.Key1']/@value").Value;
 
             Assert.Equal(expectedValue, actualValue);
         }

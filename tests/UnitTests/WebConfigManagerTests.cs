@@ -12,6 +12,8 @@ namespace UnitTests
     {
         private Mock<IFileWrapper> _fileWrapperMock;
         private Mock<IXmlDocumentWrapper> _xmlDocumentWrapperMock;
+        private Mock<ILogger> _consoleLoggerMock;
+
         private WebConfigManager _writer;
         private const string WEB_CONFIG_FILE_NAME = "web.config";
 
@@ -19,6 +21,7 @@ namespace UnitTests
         {
             _fileWrapperMock = new Mock<IFileWrapper>();
             _xmlDocumentWrapperMock = new Mock<IXmlDocumentWrapper>();
+            _consoleLoggerMock = new Mock<ILogger>();
         }
 
         [Fact]
@@ -31,6 +34,7 @@ namespace UnitTests
                 new Web.Config.Transform.Buildpack.WebConfigManager(
                     _fileWrapperMock.Object,
                     _xmlDocumentWrapperMock.Object,
+                    _consoleLoggerMock.Object,
                     "file_that_doesnot_exist"));
         }
 
@@ -42,6 +46,7 @@ namespace UnitTests
             _writer = new WebConfigManager(
                 _fileWrapperMock.Object,
                 _xmlDocumentWrapperMock.Object,
+                _consoleLoggerMock.Object,
                 WEB_CONFIG_FILE_NAME);
 
             _xmlDocumentWrapperMock.Verify(x => x.CreateXmlDocFromFile(It.IsAny<string>()), Times.Once);
@@ -55,6 +60,7 @@ namespace UnitTests
             _writer = new WebConfigManager(
                 _fileWrapperMock.Object,
                 _xmlDocumentWrapperMock.Object,
+                _consoleLoggerMock.Object,
                 WEB_CONFIG_FILE_NAME);
 
             _fileWrapperMock.Verify(f => f.Copy(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
@@ -78,6 +84,7 @@ namespace UnitTests
             LoadWebConfigAsXmlDocument();
             var expected = new List<KeyValuePair<string, string>>();
             expected.Add(new KeyValuePair<string, string>("BP_AppSettings_Key1", "AppSettings_Value1"));
+            expected.Add(new KeyValuePair<string, string>("BP.AppSettings.Key1", "AppSettings_Value1_For_Dotted_Key"));
 
             var actual = _writer.GetAppSettings();
 
@@ -90,6 +97,19 @@ namespace UnitTests
         {
             LoadWebConfigAsXmlDocument();
             var expected = new KeyValuePair<string, string>("BP_AppSettings_Key1", "TestValue");
+
+            _writer.SetAppSetting(expected.Key, expected.Value);
+
+            var actual = _writer.GetAppSetting(expected.Key);
+            actual.Should().NotBeNullOrEmpty();
+            expected.Value.Should().BeEquivalentTo(actual);
+        }
+
+        [Fact]
+        public void When_AppSettingIsPassed_SetDottedAppSetting_Should_UpdateConfigXml()
+        {
+            LoadWebConfigAsXmlDocument();
+            var expected = new KeyValuePair<string, string>("BP.AppSettings.Key1", "AppSettings_Value1_For_Dotted_Key");
 
             _writer.SetAppSetting(expected.Key, expected.Value);
 
@@ -189,6 +209,35 @@ namespace UnitTests
             actual.Should().BeTrue();
         }
 
+        [Fact]
+        public void When_TokenIsPassed_ReplaceToken_Should_ReplaceTokenInConfigXml_WhenTheRootElementContainsDot()
+        {
+            LoadWebConfigAsXmlDocument();
+            var token = new KeyValuePair<string, string>("BP_Token1_WithDotInRoot", "TestValue1");
+
+            var xmlContent = @"
+                <?xml version='1.0' encoding='utf - 8' ?>
+                <configuration>
+                    <foo.zuz>
+                        <bar baz='#{BP_Token1_WithDotInRoot}'></bar>
+                      </ foo.zuz >
+                </configuration>
+            ";
+
+            _xmlDocumentWrapperMock
+                .Setup(x => x.ConvertXmlDocToString(It.IsAny<XmlDocument>()))
+                .Returns(xmlContent);
+
+            _writer.InitializeWebConfigForTokenReplacements();
+            _writer.ReplaceToken(token.Key, token.Value);
+
+            var actual = _writer.ValueExistsInXmlDoc(token.Key);
+            actual.Should().BeFalse();
+
+            actual = _writer.ValueExistsInXmlDoc(token.Value);
+            actual.Should().BeTrue();
+        }
+
         #region Private Methods
 
         private void LoadWebConfigAsXmlDocument()
@@ -202,6 +251,7 @@ namespace UnitTests
             _writer = new WebConfigManager(
                 _fileWrapperMock.Object,
                 _xmlDocumentWrapperMock.Object,
+                _consoleLoggerMock.Object,
                 WEB_CONFIG_FILE_NAME);
         }
 

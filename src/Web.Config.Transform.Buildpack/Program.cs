@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System;
 
 namespace Web.Config.Transform.Buildpack
@@ -16,13 +15,14 @@ namespace Web.Config.Transform.Buildpack
             // setup DI
             var serviceProvider = new ServiceCollection()
                 .AddLogging()
+                .AddSingleton<ILogger, ConsoleLogger>()
                 .AddSingleton<IEnvironmentWrapper, EnvironmentWrapper>()
                 .AddSingleton<IConfigurationFactory, ConfigurationFactory>()
+                .AddSingleton<ITracer, ConfigurationTracer>()
                 .AddSingleton<IFileWrapper, FileWrapper>()
                 .AddSingleton<IXmlDocumentWrapper, XmlDocumentWrapper>()
                 .AddSingleton<WebConfigTransformBuildpack>()
                 .BuildServiceProvider();
-
             return serviceProvider;
         }
 

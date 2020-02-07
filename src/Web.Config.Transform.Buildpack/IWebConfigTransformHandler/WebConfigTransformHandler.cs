@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
+using System.IO;
 
 namespace Web.Config.Transform.Buildpack
 {
@@ -14,6 +15,21 @@ namespace Web.Config.Transform.Buildpack
         {
             _config = config ?? throw new ArgumentNullException(nameof(config), "Application configuration is required");
             _webConfigReader = webConfigReader ?? throw new ArgumentNullException(nameof(webConfigReader), "WebConfig reader is required");
+        }
+
+        public void ApplyXmlTransformation(string buildPath, IEnvironmentWrapper environmentWrapper, IWebConfigWriter webConfigWriter)
+        {
+            if (webConfigWriter == null)
+                throw new ArgumentNullException(nameof(webConfigWriter), "WebConfig writer is required");
+
+            var transformationKey = environmentWrapper.GetEnvironmentVariable(Constants.XML_TRANSFORM_KEY_NM) ?? "Release";
+
+            var transformFilePath = Path.Combine(buildPath, $"web.{transformationKey}.config");
+
+            if (File.Exists(transformFilePath))
+            {
+                webConfigWriter.ExecuteXmlTransformation(transformFilePath);
+            }
         }
 
         public void CopyExternalAppSettings(IWebConfigWriter webConfigWriter)
