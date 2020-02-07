@@ -22,7 +22,7 @@ In legacy ASP.Net applications, configuration settings are injected through Web.
 * Pulls all the configurations from environment variables and config server repo (if bounded).
 * Config server environment is identified by the environment variable `ASPNETCORE_ENVIRONMENT`, e.g. `dev`, `prod`, etc.
 * Apply xml transformation
-	> The transformation file is pulled from environment variable `XML_TRANSFORM_KEY`. For e.g. if the value of environment variable `XML_TRANSFORM_KEY` is `PCF`, then the transformation file, the buildpack looks for is `Web.PCF.config`. If the `XML_TRANSFORM_KEY` is not set, it looks for `Web.Release.config` by default. If the file doesn't exist, it skips transformation step and moves further.
+	> The transformation file is pulled from environment variable `XML_TRANSFORM_KEY`. For e.g. if the value of environment variable `XML_TRANSFORM_KEY` is `CF`, then the transformation file, the buildpack looks for is `Web.CF.config`. If the `XML_TRANSFORM_KEY` is not set, it looks for `Web.Release.config` by default. If the file doesn't exist, it skips transformation step and moves further.
 * Modify the transformed file with `appSettings:key` for `<AppSettings>` section and `connectionStrings:name` for `<ConnectionStrings>` section 
 * Modify the transformed file with tokens provided in the format `#{anykey}`, e.g. A token named `#{foo:bar}` will replaced with `myfoovalue` if an environment variable with key `foo:bar` is set with value `myfoovalue` or the config server repo `yaml` contains the info as below.
 
@@ -44,7 +44,7 @@ foo:
 </connectionStrings>
 ```
 
-* Web.PCF.config (Transformation file)
+* Web.CF.config (Transformation file)
 
 ```xml
 <connectionStrings>
@@ -55,7 +55,7 @@ foo:
 </connectionStrings>
 ```
 
-* If `XML_TRANSFORM_KEY` is set to `PCF`
+* If `XML_TRANSFORM_KEY` is set to `CF`
 
 * Web.Config (after transformation)
 
