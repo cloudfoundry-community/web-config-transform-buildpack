@@ -45,23 +45,6 @@ namespace IntegrationTests
         }
 
         [Fact]
-        public void XmlTransformation_IsCaseInsensitive()
-        {
-            Environment.SetEnvironmentVariable(Constants.XML_TRANSFORM_KEY_NM, "cloud");
-            string expectedValue = "InsertedFromCloud";
-            // act
-            _bp.Run(new[] { "supply", "", "", "", "0" });
-
-            // assert
-            var xml = new XmlDocument();
-            xml.Load("web.config");
-
-            var actualValue = xml.SelectSingleNode("/configuration/qux/quz[@key='Inserted']/@value").Value;
-
-            Assert.Equal(expectedValue, actualValue);
-        }
-
-        [Fact]
         public void XmlTransformationApplied_FromRelease_IfTransformationFileExists_AndIf_TransformationKeyIsNotSet()
         {
             Environment.SetEnvironmentVariable(Constants.XML_TRANSFORM_KEY_NM, "Release");

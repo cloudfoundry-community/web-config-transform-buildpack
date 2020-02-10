@@ -4,14 +4,14 @@
 
 Cloud Native Applications are expected to bring in configurations from external sources like environment variables, config server, etc. Please refer to `Configuration` in [12factor.net](https://12factor.net) for more information.
 
-In legacy ASP.Net applications, configuration settings are injected through Web.config files. As per cloud native principles, configuration should stay out of build artifacts. In this recipe we will use a custom buildpack which provides a solution to this problem by using token replacement during cf push staging.
+In legacy ASP.Net applications, configuration settings are injected through `web.config` files. As per cloud native principles, configuration should stay out of build artifacts. In this recipe we will use a custom buildpack which provides a solution to this problem by using token replacement during cf push staging.
 
 
 ### High level steps
 
 1. Identify environment dependent configurations and externalize
 1. Create app manifest
-1. Add web config transformations
+1. Add web config transformations.
 1. Move config settings to Spring Cloud Config Server
 1. Create service for Spring Cloud Config Server 
 1. Bind config service to app using manifest
@@ -22,7 +22,7 @@ In legacy ASP.Net applications, configuration settings are injected through Web.
 * Pulls all the configurations from environment variables and config server repo (if bounded).
 * Config server environment is identified by the environment variable `ASPNETCORE_ENVIRONMENT`, e.g. `dev`, `prod`, etc.
 * Apply xml transformation
-	> The transformation file is pulled from environment variable `XML_TRANSFORM_KEY`. For e.g. if the value of environment variable `XML_TRANSFORM_KEY` is `CF`, then the transformation file, the buildpack looks for is `Web.CF.config`. If the `XML_TRANSFORM_KEY` is not set, it looks for `Web.Release.config` by default. If the file doesn't exist, it skips transformation step and moves further.
+	> The transformation file is pulled from environment variable `XML_TRANSFORM_KEY`. For e.g. if the value of environment variable `XML_TRANSFORM_KEY` is `CF`, then the transformation file, the buildpack looks for is `web.CF.config`. If the `XML_TRANSFORM_KEY` is not set, it looks for `web.Release.config` by default. If the file doesn't exist, it skips transformation step and moves further.  Note that the transformation filenames are case sensitive and should match the case used in `XML_TRANSFORM_KEY`.
 * Modify the transformed file with `appSettings:key` for `<AppSettings>` section and `connectionStrings:name` for `<ConnectionStrings>` section 
 * Modify the transformed file with tokens provided in the format `#{anykey}`, e.g. A token named `#{foo:bar}` will replaced with `myfoovalue` if an environment variable with key `foo:bar` is set with value `myfoovalue` or the config server repo `yaml` contains the info as below.
 
@@ -35,7 +35,7 @@ foo:
 
 ##### Execution steps in detail
 
-* Web.Config (Before transformation)
+* web.config (Before transformation)
 
 ```xml
 <connectionStrings>
@@ -44,7 +44,7 @@ foo:
 </connectionStrings>
 ```
 
-* Web.CF.config (Transformation file)
+* web.CF.config (Transformation file)
 
 ```xml
 <connectionStrings>
@@ -57,7 +57,7 @@ foo:
 
 * If `XML_TRANSFORM_KEY` is set to `CF`
 
-* Web.Config (after transformation)
+* web.config (after transformation)
 
 ```xml
 <connectionStrings>
@@ -73,7 +73,7 @@ connectionStrings:
   MyDB: "Data Source=11.11.11.11;Initial Catalog=mydb;User ID=xxxx;Password=xxxx"
 ```
 
-* Web.Config (after token replacement)
+* web.config (after token replacement)
 
 ```xml
 <connectionStrings>
@@ -108,17 +108,17 @@ applications:
 
 #### 3. Add web config transformations
 
-By default, all web apps and wcf apps created with **Debug** and **Release** configurations and corresponding web config transformation files (Web.Debug.config, Web.Release.config).
+By default, all web apps and wcf apps created with **Debug** and **Release** configurations and corresponding web config transformation files (web.Debug.config, web.Release.config).
 
-* Add required transformations to `Web.Release.Config`
+* Add required transformations to `web.Release.config`
 
 * Build and push the application to Cloud Foundry to verify that your config settings are properly transformed
 
 ###### Note
-> For developer machine debugging, use `Debug` configuration profile and `Web.Debug.config` for transformation.
+> For developer machine debugging, use `Debug` configuration profile and `web.Debug.config` for transformation.
 
 
-Sample `Web.Release.Config` with transformations  
+Sample `web.Release.config` with transformations
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -237,7 +237,7 @@ You should be able to find if the environment value is actually passed in, by lo
 
 
 #### Special Behavior for appSettings and connectionStrings
-This buildpack makes it possible to externalize appSettings and connectionString values in your Web.config without using tokenized values. In this case simply include the values in your yaml config files on your Github repository (`{YOUR-APP}.production.yml`, `YOUR-APP}.development.yml`, etc.
+This buildpack makes it possible to externalize appSettings and connectionString values in your web.config without using tokenized values. In this case simply include the values in your yaml config files on your Github repository (`{YOUR-APP}.production.yml`, `YOUR-APP}.development.yml`, etc.
 
 sampleapp-Development.yaml
 ```yaml
@@ -255,7 +255,7 @@ appSettings:
    MyDB: "Data Source=prodserver;Initial Catalog=mydb;User ID=xxxx;Password=xxxx"
 ```
 
-This buildpack can inject appSettings and connectionStrings values based on environment specific yaml config files even if replacement tokens are not present in Web.Release.Config file.  
+This buildpack can inject appSettings and connectionStrings values based on environment specific yaml config files even if replacement tokens are not present in web.Release.config file.
 
 ### Sample Application & Walkthrough
 A sample web application and walkthrough can be found [here](https://github.com/cloudfoundry-community/webconfig-example-app)
