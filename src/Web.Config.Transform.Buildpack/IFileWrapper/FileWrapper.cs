@@ -22,5 +22,16 @@ namespace Web.Config.Transform.Buildpack
         {
             File.Copy(sourceFileName, destFilename, true);
         }
+
+        public string[] GetFiles(string path, string searchPattern)
+        {
+            return string.IsNullOrEmpty(path) switch
+            {
+                false => Directory.GetFiles(path, searchPattern),
+                _ => default
+            };
+        }
+
+        public string Combine(string path1, string path2) => Path.Combine(path1, path2);
     }
 }

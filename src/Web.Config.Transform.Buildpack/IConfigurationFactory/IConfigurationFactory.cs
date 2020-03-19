@@ -6,9 +6,7 @@ using System.Text;
 namespace Web.Config.Transform.Buildpack
 {
     public interface IConfigurationFactory
-
     {
         IConfigurationRoot GetConfiguration(string environment);
-
     }
 }

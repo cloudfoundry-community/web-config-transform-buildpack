@@ -36,7 +36,5 @@ namespace Web.Config.Transform.Buildpack
             doc.LoadXml(xmlData);
             return doc;
         }
-
-
     }
 }

@@ -13,8 +13,11 @@ namespace UnitTests
         private Mock<IFileWrapper> _fileWrapperMock;
         private Mock<IXmlDocumentWrapper> _xmlDocumentWrapperMock;
         private Mock<ILogger> _consoleLoggerMock;
+        private Mock<IEnvironmentWrapper> _environmentWrapperMock;
+        private Mock<IConfigurationFactory> _configurationFactoryMock;
+        private Mock<ConfigManagerSettingsBuilder> _configManagerSettingsBuilder;
 
-        private WebConfigManager _writer;
+        private ConfigReaderWriter _writer;
         private const string WEB_CONFIG_FILE_NAME = "web.config";
 
         public WebConfigManagerTests()
@@ -22,6 +25,9 @@ namespace UnitTests
             _fileWrapperMock = new Mock<IFileWrapper>();
             _xmlDocumentWrapperMock = new Mock<IXmlDocumentWrapper>();
             _consoleLoggerMock = new Mock<ILogger>();
+            _environmentWrapperMock = new Mock<IEnvironmentWrapper>();
+            _configurationFactoryMock = new Mock<IConfigurationFactory>();
+            _configManagerSettingsBuilder = new Mock<ConfigManagerSettingsBuilder>();
         }
 
         [Fact]
@@ -30,24 +36,32 @@ namespace UnitTests
             _fileWrapperMock = new Mock<IFileWrapper>();
             _fileWrapperMock.Setup(f => f.Exists(It.IsAny<string>())).Returns(false);
 
-            Assert.Throws<ArgumentNullException>(() => 
-                new Web.Config.Transform.Buildpack.WebConfigManager(
-                    _fileWrapperMock.Object,
-                    _xmlDocumentWrapperMock.Object,
-                    _consoleLoggerMock.Object,
-                    "file_that_doesnot_exist"));
+            Assert.Throws<ArgumentNullException>(() =>
+                new Web.Config.Transform.Buildpack.ConfigReaderWriterBuilder(options =>
+                {
+                    options.FileWrapper = _fileWrapperMock.Object;
+                    options.XmlDocumentWrapper = _xmlDocumentWrapperMock.Object;
+                    options.Logger = _consoleLoggerMock.Object;
+                    options.BuildPath = "file_that_doesnot_exist";
+                }).Build());
         }
 
         [Fact]
         public void When_WebConfigExists_Constructor_Should_LoadConfigAsXmlDocument()
         {
-            _fileWrapperMock.Setup(f => f.Exists(It.IsAny<string>())).Returns(true);
+            _fileWrapperMock.Setup(f => f.Exists(It.IsAny<string>())).Returns(true); 
+            _configurationFactoryMock.Setup(f => f.GetConfiguration(It.IsAny<string>())).Returns(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+            _configManagerSettingsBuilder.Setup(f => f.GetConfigPaths()).Returns(("", WEB_CONFIG_FILE_NAME));
 
-            _writer = new WebConfigManager(
-                _fileWrapperMock.Object,
-                _xmlDocumentWrapperMock.Object,
-                _consoleLoggerMock.Object,
-                WEB_CONFIG_FILE_NAME);
+            _writer = new ConfigReaderWriterBuilder(_configManagerSettingsBuilder.Object, options =>
+            {
+                options.ConfigurationFactory = _configurationFactoryMock.Object;
+                options.FileWrapper = _fileWrapperMock.Object;
+                options.XmlDocumentWrapper = _xmlDocumentWrapperMock.Object;
+                options.Logger = _consoleLoggerMock.Object;
+                options.EnvironmentWrapper = _environmentWrapperMock.Object;
+                options.BuildPath = WEB_CONFIG_FILE_NAME;
+            }).Build();
 
             _xmlDocumentWrapperMock.Verify(x => x.CreateXmlDocFromFile(It.IsAny<string>()), Times.Once);
         }
@@ -56,12 +70,18 @@ namespace UnitTests
         public void When_WebConfigExists_Constructor_Should_BackupConfigFile()
         {
             _fileWrapperMock.Setup(f => f.Exists(It.IsAny<string>())).Returns(true);
+            _configurationFactoryMock.Setup(f => f.GetConfiguration(It.IsAny<string>())).Returns(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+            _configManagerSettingsBuilder.Setup(f => f.GetConfigPaths()).Returns(("", WEB_CONFIG_FILE_NAME));
 
-            _writer = new WebConfigManager(
-                _fileWrapperMock.Object,
-                _xmlDocumentWrapperMock.Object,
-                _consoleLoggerMock.Object,
-                WEB_CONFIG_FILE_NAME);
+            _writer = new ConfigReaderWriterBuilder(_configManagerSettingsBuilder.Object, options =>
+            {
+                options.ConfigurationFactory = _configurationFactoryMock.Object;
+                options.FileWrapper = _fileWrapperMock.Object;
+                options.XmlDocumentWrapper = _xmlDocumentWrapperMock.Object;
+                options.Logger = _consoleLoggerMock.Object;
+                options.EnvironmentWrapper = _environmentWrapperMock.Object;
+                options.BuildPath = WEB_CONFIG_FILE_NAME;
+            }).Build();
 
             _fileWrapperMock.Verify(f => f.Copy(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
@@ -243,20 +263,25 @@ namespace UnitTests
         private void LoadWebConfigAsXmlDocument()
         {
             XmlDocument xmldoc = new XmlDocument();
-            xmldoc.Load("web.config");
+            xmldoc.Load(WEB_CONFIG_FILE_NAME);
 
             _fileWrapperMock.Setup(f => f.Exists(It.IsAny<string>())).Returns(true);
             _xmlDocumentWrapperMock.Setup(f => f.CreateXmlDocFromFile(It.IsAny<string>())).Returns(xmldoc);
+            _configurationFactoryMock.Setup(f => f.GetConfiguration(It.IsAny<string>())).Returns(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
 
-            _writer = new WebConfigManager(
-                _fileWrapperMock.Object,
-                _xmlDocumentWrapperMock.Object,
-                _consoleLoggerMock.Object,
-                WEB_CONFIG_FILE_NAME);
+            _configManagerSettingsBuilder.Setup(f => f.GetConfigPaths()).Returns(("", WEB_CONFIG_FILE_NAME));
+
+            _writer = new ConfigReaderWriterBuilder(_configManagerSettingsBuilder.Object, options =>
+            {
+                options.ConfigurationFactory = _configurationFactoryMock.Object;
+                options.EnvironmentWrapper = _environmentWrapperMock.Object;
+                options.FileWrapper = _fileWrapperMock.Object;
+                options.Logger = _consoleLoggerMock.Object;
+                options.XmlDocumentWrapper = _xmlDocumentWrapperMock.Object;
+                options.BuildPath = WEB_CONFIG_FILE_NAME;
+            }).Build();
         }
 
         #endregion
-
-
     }
 }

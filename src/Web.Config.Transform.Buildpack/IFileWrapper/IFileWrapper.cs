@@ -12,5 +12,9 @@ namespace Web.Config.Transform.Buildpack
         void Move(string sourceFileName, string destFileName);
 
         void Copy(string sourceFileName, string destFileName);
+
+        string[] GetFiles(string path, string searchPattern);
+        
+        string Combine(string path1, string path2);
     }
 }
