@@ -3,18 +3,17 @@ using System.IO;
 using System.Linq;
 using ICSharpCode.SharpZipLib.Zip;
 using Nuke.Common;
-using Nuke.Common.BuildServers;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.GitHub;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
-using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
@@ -36,26 +35,26 @@ class Build : NukeBuild
         Windows,
         Linux
     }
-    public static int Main () => Execute<Build>(x => x.Publish);
+    public static int Main() => Execute<Build>(x => x.Publish);
     const string BuildpackProjectName = "Web.Config.Transform.Buildpack";
     string PackageZipName => $"{BuildpackProjectName}-{Runtime}-{GitVersion.MajorMinorPatch}.zip";
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-    
+
     [Parameter("Target CF stack type - 'windows' or 'linux'. Determines buildpack runtime (Framework or Core). Default is 'windows'")]
     readonly StackType Stack = StackType.Windows;
-    
+
     [Parameter("GitHub personal access token with access to the repo")]
     string GitHubToken;
 
-    string Runtime => Stack == StackType.Windows ? "win-x64" : "linux-x64";  
-    string Framework => Stack == StackType.Windows ? "net472" : "netcoreapp3.1";
+    string Runtime => Stack == StackType.Windows ? "win-x64" : "linux-x64";
+    string Framework => "netcoreapp3.1";
 
 
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
-    [GitVersion] readonly GitVersion GitVersion;
+    [Nuke.Extended.GitVersion] readonly GitVersion GitVersion;
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "tests";
@@ -91,12 +90,9 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .SetFramework(Framework)
                 .SetRuntime(Runtime)
-                .SetAssemblyVersion(GitVersion.GetNormalizedAssemblyVersion())
-                .SetFileVersion(GitVersion.GetNormalizedFileVersion())
+                .SetAssemblyVersion(GitVersion.AssemblySemVer)
+                .SetFileVersion(GitVersion.AssemblySemFileVer)
                 .SetInformationalVersion(GitVersion.InformationalVersion)
-                // .SetAssemblyVersion("1.0.0.0")
-                // .SetFileVersion("1.0.0.0")
-                // .SetInformationalVersion("1.0.0.0")
                 .EnableNoRestore());
         });
 
@@ -125,8 +121,8 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .SetFramework(Framework)
                 .SetRuntime(Runtime)
-                .SetAssemblyVersion(GitVersion.GetNormalizedAssemblyVersion())
-                .SetFileVersion(GitVersion.GetNormalizedFileVersion())
+                .SetAssemblyVersion(GitVersion.AssemblySemVer)
+                .SetFileVersion(GitVersion.AssemblySemFileVer)
                 .SetInformationalVersion(GitVersion.InformationalVersion)
                 .EnableNoRestore());
             var workDirectory = TemporaryDirectory / "pack";
@@ -135,18 +131,18 @@ class Build : NukeBuild
             var publishDirectory = buildpackProject.Directory / "bin" / Configuration / Framework / Runtime / "publish";
             var workBinDirectory = workDirectory / "bin";
             var scriptsDirectory = RootDirectory / "scripts";
-            
+
             CopyDirectoryRecursively(publishDirectory, workBinDirectory, DirectoryExistsPolicy.Merge);
             CopyDirectoryRecursively(scriptsDirectory, workBinDirectory, DirectoryExistsPolicy.Merge);
             var tempZipFile = TemporaryDirectory / PackageZipName;
-            
+
             ZipFile.CreateFromDirectory(workDirectory, tempZipFile);
             MakeFilesInZipUnixExecutable(tempZipFile);
             CopyFileToDirectory(tempZipFile, ArtifactsDirectory, FileExistsPolicy.Overwrite);
             Logger.Block(ArtifactsDirectory / PackageZipName);
 
         });
-    
+
 
     Target Release => _ => _
         .Description("Creates a GitHub release (or ammends existing) and uploads buildpack artifact")
@@ -156,7 +152,7 @@ class Build : NukeBuild
         {
             if (!GitRepository.IsGitHubRepository())
                 throw new Exception("Only supported when git repo remote is github");
-            
+
             var client = new GitHubClient(new ProductHeaderValue(BuildpackProjectName))
             {
                 Credentials = new Credentials(GitHubToken, AuthenticationType.Bearer)
@@ -164,7 +160,7 @@ class Build : NukeBuild
             var gitIdParts = GitRepository.Identifier.Split("/");
             var owner = gitIdParts[0];
             var repoName = gitIdParts[1];
-            
+
             var releaseName = $"v{GitVersion.MajorMinorPatch}";
             Release release;
             try
@@ -175,8 +171,8 @@ class Build : NukeBuild
             {
                 var newRelease = new NewRelease(releaseName)
                 {
-                    Name = releaseName, 
-                    Draft = false, 
+                    Name = releaseName,
+                    Draft = false,
                     Prerelease = false
                 };
                 release = await client.Repository.Release.Create(owner, repoName, newRelease);
@@ -187,11 +183,11 @@ class Build : NukeBuild
             {
                 await client.Repository.Release.DeleteAsset(owner, repoName, existingAsset.Id);
             }
-            
+
             var zipPackageLocation = ArtifactsDirectory / PackageZipName;
             var releaseAssetUpload = new ReleaseAssetUpload(PackageZipName, "application/zip", File.OpenRead(zipPackageLocation), null);
             var releaseAsset = await client.Repository.Release.UploadAsset(release, releaseAssetUpload);
-            
+
             Logger.Block(releaseAsset.BrowserDownloadUrl);
         });
 
@@ -203,7 +199,7 @@ class Build : NukeBuild
         {
             output.SetLevel(9);
             ZipEntry entry;
-		
+
             while ((entry = input.GetNextEntry()) != null)
             {
                 var outEntry = new ZipEntry(entry.Name);
@@ -217,6 +213,6 @@ class Build : NukeBuild
         }
 
         DeleteFile(zipFile);
-        RenameFile(tmpFileName,zipFile, FileExistsPolicy.Overwrite);
+        RenameFile(tmpFileName, zipFile, FileExistsPolicy.Overwrite);
     }
 }
