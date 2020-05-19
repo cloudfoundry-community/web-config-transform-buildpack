@@ -11,7 +11,12 @@ namespace Web.Config.Transform.Buildpack
     public class ConfigurationFactory : IConfigurationFactory
     {
         ILogger _logger;
-        public ConfigurationFactory(ILogger logger) {
+        public ConfigurationFactory(ILogger logger)
+        {
+            if (logger == null)
+            {
+                logger = new ConsoleLogger();
+            }
             _logger = logger;
         }
 
@@ -25,10 +30,13 @@ namespace Web.Config.Transform.Buildpack
             {
                 _logger.WriteLog("-----> Config server binding found...");
 
-                configBuilder.AddConfigServer(environment,
-#pragma warning disable CS0618 // Type or member is obsolete
-                    new LoggerFactory(new[] { new ConsoleLoggerProvider((name, level) => { level = LogLevel.Information; return true; }, false) }));
-#pragma warning restore CS0618 // Type or member is obsolete
+                var logFactory = LoggerFactory.Create(builder =>
+                {
+                    builder.AddConsole(options => options.IncludeScopes = false);
+                    builder.SetMinimumLevel(LogLevel.Information);
+                });
+
+                configBuilder.AddConfigServer(environment, logFactory);
             }
             else
                 configBuilder.AddCloudFoundry();

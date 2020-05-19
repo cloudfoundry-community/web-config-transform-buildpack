@@ -18,14 +18,29 @@ namespace IntegrationTests
 
         }
 
-        public void Dispose()
+        #region IDisposable Support
+        private bool _disposedValue = false;
+        protected virtual void Dispose(bool disposing)
         {
-            if (File.Exists("web.config.orig"))
+            if (!_disposedValue)
             {
-                File.Copy("web.config.orig", "web.config", true);
-                File.Delete("web.config.orig");
+                if (disposing)
+                {
+                    if (File.Exists("web.config.orig"))
+                    {
+                        File.Copy("web.config.orig", "web.config", true);
+                        File.Delete("web.config.orig");
+                    }
+                }
+                _disposedValue = true;
             }
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        #endregion
 
         [Fact]
         public void XmlTransformationApplied_FromTransformationKey_And_IfTransformationFileExists()
@@ -68,7 +83,6 @@ namespace IntegrationTests
             const string expectedValue = "BP_AppSettings_Value123";
             Environment.SetEnvironmentVariable("appSettings:BP_AppSettings_Key1", expectedValue);
 
-
             // act
             _bp.Run(new[] { "supply", "", "", "", "0" });
 
@@ -87,7 +101,6 @@ namespace IntegrationTests
             // arrange
             const string expectedValue = "AppSettings_Value1_For_Dotted_Key123";
             Environment.SetEnvironmentVariable("appSettings:BP.AppSettings.Key1", expectedValue);
-
 
             // act
             _bp.Run(new[] { "supply", "", "", "", "0" });
@@ -108,7 +121,6 @@ namespace IntegrationTests
             const string expectedValue = "BP_ConnectionStrings_Value1";
 
             Environment.SetEnvironmentVariable("connectionStrings:BP_ConnectionStrings_Key1", expectedValue);
-
 
             // act
             _bp.Run(new[] { "supply", "", "", "", "0" });
@@ -146,7 +158,6 @@ namespace IntegrationTests
         {
             //act
             _bp.Run(new[] { "supply", "", "", "", "0" });
-
 
             //assert 
             Assert.True(File.Exists("web.config.orig"));

@@ -11,17 +11,17 @@ namespace UnitTests
     public class WebConfigTransformHandlerTests
     {
         private readonly IConfigurationRoot _configMock;
-        private readonly Mock<IWebConfigReader> _webConfigReaderMock;
-        private readonly Mock<IWebConfigWriter> _webConfigWriterMock;
-        private readonly WebConfigTransformHandler _transformHandler; 
+        private readonly Mock<IConfigReader> _webConfigReaderMock;
+        private readonly Mock<IConfigWriter> _webConfigWriterMock;
+        private readonly ConfigTransformHandler _transformHandler;
 
         public WebConfigTransformHandlerTests()
         {
             _configMock = GetMockConfiguration();
-            _webConfigReaderMock = new Mock<IWebConfigReader>();
-            _webConfigWriterMock = new Mock<IWebConfigWriter>();
+            _webConfigReaderMock = new Mock<IConfigReader>();
+            _webConfigWriterMock = new Mock<IConfigWriter>();
 
-            _transformHandler = new WebConfigTransformHandler(_configMock, _webConfigReaderMock.Object);
+            _transformHandler = new ConfigTransformHandler(_configMock, _webConfigReaderMock.Object, _webConfigWriterMock.Object);
         }
 
         private IConfigurationRoot GetMockConfiguration()
@@ -39,7 +39,7 @@ namespace UnitTests
         [Fact]
         public void When_ConfigIsNull_Constructor_Should_ThrowException()
         {
-            Action handlerCreation = () => { new WebConfigTransformHandler(null, _webConfigReaderMock.Object); };
+            Action handlerCreation = () => { new ConfigTransformHandler(null, _webConfigReaderMock.Object, _webConfigWriterMock.Object); };
 
             handlerCreation.Should().Throw<ArgumentNullException>();
         }
@@ -47,19 +47,19 @@ namespace UnitTests
         [Fact]
         public void When_WebConfigReaderIsNull_Constructor_Should_ThrowException()
         {
-            Action handlerCreation = () => { new WebConfigTransformHandler(_configMock, null); };
+            Action handlerCreation = () => { new ConfigTransformHandler(_configMock, null, _webConfigWriterMock.Object); };
 
             handlerCreation.Should().Throw<ArgumentNullException>();
         }
 
         [Fact]
-        public void When_WebConfigWriterIsNull_CopyExternalAppSettings_Should_ThrowException()
+        public void When_WebConfigWriterIsNull_Constructor_Should_ThrowException()
         {
-            Action copyAppSettings = () => { _transformHandler.CopyExternalAppSettings(null); };
+            Action handlerCreation = () => { new ConfigTransformHandler(_configMock, _webConfigReaderMock.Object, null); };
 
-            copyAppSettings.Should().Throw<ArgumentNullException>();
+            handlerCreation.Should().Throw<ArgumentNullException>();
         }
-
+        
         [Fact]
         public void When_ExternalConfigHasAppSetting_CopyExternalAppSettings_Should_CallSetAppSetting()
         {
@@ -69,17 +69,9 @@ namespace UnitTests
             };
             _webConfigReaderMock.Setup(r => r.GetAppSettings()).Returns(configAppSettings);
 
-            _transformHandler.CopyExternalAppSettings(_webConfigWriterMock.Object);
+            _transformHandler.CopyExternalAppSettings();
 
             _webConfigWriterMock.Verify(w => w.SetAppSetting(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
-        }
-
-        [Fact]
-        public void When_WebConfigWriterIsNull_CopyExternalConnectionStrings_Should_ThrowException()
-        {
-            Action copyExternalConnectionStrings = () => { _transformHandler.CopyExternalConnectionStrings(null); };
-
-            copyExternalConnectionStrings.Should().Throw<ArgumentNullException>();
         }
 
         [Fact]
@@ -91,23 +83,15 @@ namespace UnitTests
             };
             _webConfigReaderMock.Setup(r => r.GetConnectionStrings()).Returns(configConnectionStrings);
 
-            _transformHandler.CopyExternalConnectionStrings(_webConfigWriterMock.Object);
+            _transformHandler.CopyExternalConnectionStrings();
 
             _webConfigWriterMock.Verify(w => w.SetConnectionString(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
         }
 
         [Fact]
-        public void When_WebConfigWriterIsNull_CopyExternalTokens_Should_ThrowException()
-        {
-            Action copyExternalTokens = () => { _transformHandler.CopyExternalTokens(null); };
-
-            copyExternalTokens.Should().Throw<ArgumentNullException>();
-        }
-
-        [Fact]
         public void When_ExternalConfigHasTokens_CopyExternalTokens_Should_CallInitializeReplaceFinalize()
         {
-            _transformHandler.CopyExternalTokens(_webConfigWriterMock.Object);
+            _transformHandler.CopyExternalTokens();
 
             _webConfigWriterMock.Verify(w => w.InitializeWebConfigForTokenReplacements(), Times.Once);
             _webConfigWriterMock.Verify(w => w.ReplaceToken(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);

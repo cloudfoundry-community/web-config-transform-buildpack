@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Web.Config.Transform.Buildpack
 {
@@ -32,38 +33,41 @@ namespace Web.Config.Transform.Buildpack
             return false;
         }
 
+        private void LogHeader(string message)
+        {
+            _logger.WriteLog("".PadRight(message.Length + 10, '='));
+            _logger.WriteLog("==== " + (message.Trim() + " ").PadRight(message.Length - 4, '='));
+            _logger.WriteLog("".PadRight(message.Length + 10, '='));
+        }
+
         protected override void Apply(string buildPath, string cachePath, string depsPath, int index)
         {
-            _logger.WriteLog("================================================================================");
-            _logger.WriteLog("=============== WebConfig Transform Buildpack execution started ================");
-            _logger.WriteLog("================================================================================");
+            LogHeader(".NET Config Transform Buildpack execution started");
 
-            ApplyTransformations(buildPath, Path.Combine(buildPath, "web.config"));
-
-            _logger.WriteLog("================================================================================");
-            _logger.WriteLog("============== WebConfig Transform Buildpack execution completed ===============");
-            _logger.WriteLog("================================================================================");
-        }
-
-        private void ApplyTransformations(string buildPath, string webConfig)
-        {
-            using (var webConfigManager = new WebConfigManager(_fileWrapper, _xmlDocumentWrapper, _logger, webConfig))
+            using (var configManager =
+                new ConfigReaderWriterBuilder(options =>
+                {
+                    options.BuildPath = buildPath;
+                    options.ConfigurationFactory = _configurationFactory;
+                    options.EnvironmentWrapper = _environmentWrapper;
+                    options.FileWrapper = _fileWrapper;
+                    options.Logger = _logger;
+                    options.XmlDocumentWrapper = _xmlDocumentWrapper;
+                })
+                .Build())
             {
-                var environment = _environmentWrapper.GetEnvironmentVariable(Constants.ASPNETCORE_ENVIRONMENT_NM) ?? "Release";
-                _logger.WriteLog($"-----> Using Environment: {environment}");
-
-                var config = _configurationFactory.GetConfiguration(environment);
-
                 _tracer.FlushEnvironmentVariables();
 
-                var transform = new WebConfigTransformHandler(config, webConfigManager);
-
-                transform.ApplyXmlTransformation(buildPath, _environmentWrapper, webConfigManager);
-                transform.CopyExternalAppSettings(webConfigManager);
-                transform.CopyExternalConnectionStrings(webConfigManager);
-                transform.CopyExternalTokens(webConfigManager);
+                var transformer =
+                    new ConfigTransformHandler(
+                        configManager.ConfigSettings.SourceConfigRoot, configManager as IConfigReader, configManager as IConfigWriter);
+                transformer.ApplyXmlTransformation(configManager.ConfigSettings.TransformConfigPath);
+                transformer.CopyExternalAppSettings();
+                transformer.CopyExternalConnectionStrings();
+                transformer.CopyExternalTokens();
             }
+
+            LogHeader(".NET Config Transform Buildpack execution completed");
         }
     }
-        
 }
