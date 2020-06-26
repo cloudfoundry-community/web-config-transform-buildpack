@@ -2,9 +2,9 @@
 
 ### Purpose of the `web-config-transform-buildpack`
 
-Cloud Native Applications are expected to bring in configurations from external sources like environment variables, config server, etc. Please refer to `Configuration` in [12factor.net](https://12factor.net) for more information.
+Cloud Native Applications are expected to bring in configurations from external sources like environment variables, config server , etc. Please refer to `Configuration` in [12factor.net](https://12factor.net) for more information.
 
-In legacy ASP.Net applications, configuration settings are injected through `web.config` files. As per cloud native principles, configuration should stay out of build artifacts. In this recipe we will use a custom buildpack which provides a solution to this problem by using token replacement during cf push staging.
+In legacy ASP.Net applications, configuration settings are injected through `web.config` files, and in Console applications, configuration settings are injected through app.config. As per cloud native principles, configuration should stay out of build artifacts. In this recipe we will use a custom buildpack which provides a solution to this problem by using token replacement during cf push staging.
 
 
 ### High level steps
@@ -22,7 +22,13 @@ In legacy ASP.Net applications, configuration settings are injected through `web
 * Pulls all the configurations from environment variables and config server repo (if bounded).
 * Config server environment is identified by the environment variable `ASPNETCORE_ENVIRONMENT`, e.g. `dev`, `prod`, etc.
 * Apply xml transformation
-	> The transformation file is pulled from environment variable `XML_TRANSFORM_KEY`. For e.g. if the value of environment variable `XML_TRANSFORM_KEY` is `CF`, then the transformation file, the buildpack looks for is `web.CF.config`. If the `XML_TRANSFORM_KEY` is not set, it looks for `web.Release.config` by default. If the file doesn't exist, it skips transformation step and moves further.  Note that the transformation filenames are case sensitive and should match the case used in `XML_TRANSFORM_KEY`.
+	> The transformation file target is pulled from environment variable `XML_TRANSFORM_KEY`. 
+    The pattern, `[web|app].{XML_TRANSFORM_KEY}.config`, is used to identify the file to transform. 
+    For e.g. if the value of environment variable `XML_TRANSFORM_KEY` is `CF`, then the transformation file, the buildpack looks for, is `web.CF.config` for web applications and `app.CF.config` for console applications. 
+    If the `XML_TRANSFORM_KEY` is not set, it looks for `web.Release.config` or `app.Release.config` by default. 
+    If the file doesn't exist, it skips transformation step and moves further. 
+    Note that the transformation filenames are case sensitive and should match the case used in `XML_TRANSFORM_KEY`.
+    Lastly, the final transformed config file name for console applications is `{applicationName}.exe.config` instead of `web.config` for web applications.
 * Modify the transformed file with `appSettings:key` for `<AppSettings>` section and `connectionStrings:name` for `<ConnectionStrings>` section 
 * Modify the transformed file with tokens provided in the format `#{anykey}`, e.g. A token named `#{foo:bar}` will replaced with `myfoovalue` if an environment variable with key `foo:bar` is set with value `myfoovalue` or the config server repo `yaml` contains the info as below.
 
@@ -31,7 +37,7 @@ foo:
   bar: myfoovalue
 ```
 
-    > NOTE: all transform xml attributes and tokens are case-sensitive
+  > NOTE: all transform xml attributes and tokens are case-sensitive
 
 ##### Execution steps in detail
 
@@ -81,6 +87,8 @@ connectionStrings:
          connectionString="Data Source=11.11.11.11;Initial Catalog=mydb;User ID=xxxx;Password=xxxx"/>
 </connectionStrings>
 ``` 
+
+> Note: For a console applications, the transformation file, in the above example, would have been called app.CF.config and the resulting transformed file would be the application exe name followed by the `.exe.config` extension.
 
 #### 2. Create a Cloud Foundry app manifest  
 
