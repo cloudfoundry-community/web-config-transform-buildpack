@@ -4,14 +4,14 @@
 
 Cloud Native Applications are expected to bring in configurations from external sources like environment variables, config server , etc. Please refer to `Configuration` in [12factor.net](https://12factor.net) for more information.
 
-In legacy ASP.Net applications, configuration settings are injected through `web.config` files, and in Console applications, configuration settings are injected through app.config. As per cloud native principles, configuration should stay out of build artifacts. In this recipe we will use a custom buildpack which provides a solution to this problem by using token replacement during cf push staging.
+In legacy ASP.Net applications, configuration settings are injected through `web.config` files, and in Console applications, configuration settings are injected through `app.config`. As per cloud native principles, configuration should stay out of build artifacts. In this recipe we will use a custom buildpack which provides a solution to this problem by using token replacement during cf push staging.
 
 
 ### High level steps
 
 1. Identify environment dependent configurations and externalize
 1. Create app manifest
-1. Add web config transformations.
+1. Add [web|app] config transformations.
 1. Move config settings to Spring Cloud Config Server
 1. Create service for Spring Cloud Config Server 
 1. Bind config service to app using manifest
