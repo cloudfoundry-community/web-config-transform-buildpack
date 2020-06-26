@@ -11,6 +11,7 @@ SCRIPT_DIR=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 
 BUILD_PROJECT_FILE="$SCRIPT_DIR/build/_build.csproj"
 TEMP_DIRECTORY="$SCRIPT_DIR//.tmp"
+DOTNET_DIRECTORY="$SCRIPT_DIR//.dotnet"
 
 DOTNET_GLOBAL_FILE="$SCRIPT_DIR//global.json"
 DOTNET_INSTALL_URL="https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.sh"
@@ -39,12 +40,12 @@ fi
 if [[ -x "$(command -v dotnet)" && (-z ${DOTNET_VERSION+x} || $(dotnet --version) == "$DOTNET_VERSION") ]]; then
     export DOTNET_EXE="$(command -v dotnet)"
 else
-    DOTNET_DIRECTORY="$TEMP_DIRECTORY/dotnet-unix"
     export DOTNET_EXE="$DOTNET_DIRECTORY/dotnet"
     
     # Download install script
-    DOTNET_INSTALL_FILE="$TEMP_DIRECTORY/dotnet-install.sh"
+    DOTNET_INSTALL_FILE="$DOTNET_DIRECTORY/dotnet-install.sh"
     mkdir -p "$TEMP_DIRECTORY"
+    mkdir -p "$DOTNET_DIRECTORY"
     curl -Lsfo "$DOTNET_INSTALL_FILE" "$DOTNET_INSTALL_URL"
     chmod +x "$DOTNET_INSTALL_FILE"
     

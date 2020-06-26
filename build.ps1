@@ -15,6 +15,7 @@ $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 
 $BuildProjectFile = "$PSScriptRoot\build\_build.csproj"
 $TempDirectory = "$PSScriptRoot\\.tmp"
+$DotNetDirectory = "$PSScriptRoot\\.dotnet"
 
 $DotNetGlobalFile = "$PSScriptRoot\\global.json"
 $DotNetInstallUrl = "https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.ps1"
@@ -46,12 +47,12 @@ if ((Get-Command "dotnet" -ErrorAction SilentlyContinue) -ne $null -and `
     $env:DOTNET_EXE = (Get-Command "dotnet").Path
 }
 else {
-    $DotNetDirectory = "$TempDirectory\dotnet-win"
     $env:DOTNET_EXE = "$DotNetDirectory\dotnet.exe"
 
     # Download install script
-    $DotNetInstallFile = "$TempDirectory\dotnet-install.ps1"
+    $DotNetInstallFile = "$DotNetDirectory\dotnet-install.ps1"
     md -force $TempDirectory > $null
+    md -force $DotNetDirectory > $null
     (New-Object System.Net.WebClient).DownloadFile($DotNetInstallUrl, $DotNetInstallFile)
 
     # Install by channel or version
